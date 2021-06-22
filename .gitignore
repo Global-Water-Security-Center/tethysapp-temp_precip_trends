@@ -9,3 +9,5 @@
 *.DS_Store
 .idea/
 services.yml
+tethysapp/temp_precip_trends/workspaces/*
+!tethysapp/temp_precip_trends/workspaces/*/.gitkeep
