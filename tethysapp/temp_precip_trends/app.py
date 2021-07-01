@@ -2,7 +2,7 @@ from tethys_sdk.base import TethysAppBase, url_map_maker
 from tethys_sdk.app_settings import CustomSetting, SpatialDatasetServiceSetting
 
 
-class TempPrecipTrends(TethysAppBase):
+class TempPrecipTrendsApp(TethysAppBase):
     """
     Tethys app class for Temperature and Precipitation Trends.
     """
@@ -25,13 +25,14 @@ class TempPrecipTrends(TethysAppBase):
         """
         Add controllers
         """
+        from .controllers import GwscMapLayout
         UrlMap = url_map_maker(self.root_url)
 
         url_maps = (
             UrlMap(
                 name='home',
-                url='api/temp-precip-trends',
-                controller='temp_precip_trends.controllers.home'
+                url='temp-precip-trends',
+                controller=GwscMapLayout.as_controller(app=TempPrecipTrendsApp)
             ),
             UrlMap(
                 name='min_temp',
@@ -86,13 +87,14 @@ class TempPrecipTrends(TethysAppBase):
         return custom_settings
 
     def spatial_dataset_service_settings(self):
-        sds_settings = (
+        """
+        Define Spatial Dataset Service Settings for the app.
+        """
+        return (
             SpatialDatasetServiceSetting(
-                name=self.SET_THREDDS_SDS_NAME,
-                description='THREDDS service for app to use',
+                name=self.THREDDS_SDS_NAME,
+                description='THREDDS server hosting WMS services of ERA 5 daily summary dataset.',
                 engine=SpatialDatasetServiceSetting.THREDDS,
-                required=True,
+                required=True
             ),
         )
-
-        return sds_settings
