@@ -1,4 +1,5 @@
 from tethys_sdk.base import TethysAppBase, url_map_maker
+from tethys_sdk.app_settings import CustomSetting
 
 
 class TempPrecipTrends(TethysAppBase):
@@ -29,6 +30,24 @@ class TempPrecipTrends(TethysAppBase):
                 url='temp-precip-trends',
                 controller='temp_precip_trends.controllers.home'
             ),
+            UrlMap(
+                name='home',
+                url='get-min-temp',
+                controller='temp_precip_trends.api.get_min_temperature'
+            ),
         )
 
         return url_maps
+
+
+    def custom_settings(self):
+        custom_settings = (
+            CustomSetting(
+              name='data_path',
+              type=CustomSetting.TYPE_STRING,
+              description='Data location',
+              required=True
+            ),
+        )
+
+        return custom_settings

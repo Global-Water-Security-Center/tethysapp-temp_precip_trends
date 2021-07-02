@@ -11,5 +11,7 @@ requirements:
     packages:
 
   pip:
+    - xarray
+    - zarr
 
 post:
