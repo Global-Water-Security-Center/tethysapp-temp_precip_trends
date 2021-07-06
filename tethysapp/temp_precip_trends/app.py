@@ -20,6 +20,7 @@ class TempPrecipTrendsApp(TethysAppBase):
 
     SET_THREDDS_SDS_NAME = 'primary_thredds'
     SET_THREDDS_DATASET_NAME = 'primary_dataset'
+    DATASET_ID_SETTING_NAME = 'temp_precip_dataset_id'
 
     def url_maps(self):
         """
