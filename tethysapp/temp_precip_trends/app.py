@@ -94,7 +94,7 @@ class TempPrecipTrendsApp(TethysAppBase):
         return (
             SpatialDatasetServiceSetting(
                 name=self.THREDDS_SDS_NAME,
-                description='THREDDS server hosting WMS services of ERA 5 daily summary dataset.',
+                description='THREDDS server hosting ERA 5 daily summary dataset.',
                 engine=SpatialDatasetServiceSetting.THREDDS,
                 required=True
             ),
