@@ -20,7 +20,12 @@ class TempPrecipTrendsApp(TethysAppBase):
 
     SET_THREDDS_SDS_NAME = 'primary_thredds'
     SET_THREDDS_DATASET_NAME = 'primary_dataset'
-    DATASET_ID_SETTING_NAME = 'temp_precip_dataset_id'
+    SET_THREDDS_WMS_BASE = 'thredds_wms_base'
+    SET_DATASET_URL_PATH = 'dataset_url_path'
+    SET_MIN_TEMP_NAME = 'min_temp_name'
+    SET_MEAN_TEMP_NAME = 'mean_temp_name'
+    SET_MAX_TEMP_NAME = 'max_temp_name'
+    SET_TOT_PRECIP_NAME = 'tot_precip_name'
 
     def url_maps(self):
         """
@@ -75,17 +80,62 @@ class TempPrecipTrendsApp(TethysAppBase):
         return url_maps
 
     def custom_settings(self):
-        custom_settings = (
+        """
+        Define custom settings for the app.
+        """
+        return (
             CustomSetting(
-                name='primary_dataset',
+                name=self.SET_THREDDS_DATASET_NAME,
                 type=CustomSetting.TYPE_STRING,
                 description='Default THREDDS dataset.',
                 required=True,
                 default='ERA5 Daily Precipitation and Temperatures',
             ),
+            CustomSetting(
+                name=self.SET_THREDDS_WMS_BASE,
+                description=f'Base path for WMS services on the "{self.SET_THREDDS_SDS_NAME}" '
+                            f'THREDDS server (e.g.: /thredds/wms/).',
+                type=CustomSetting.TYPE_STRING,
+                default='/thredds/wms/',
+                required=True,
+            ),
+            CustomSetting(
+                name=self.SET_DATASET_URL_PATH,
+                description=f'The "urlPath" of the ERA 5 daily summary dataset on the '
+                            f'"{self.SET_THREDDS_SDS_NAME}" THREDDS server (e.g.: era5/daily-summary.nc).',
+                type=CustomSetting.TYPE_STRING,
+                default='era5/daily-summary.nc',
+                required=True,
+            ),
+            CustomSetting(
+                name=self.SET_MIN_TEMP_NAME,
+                description='Name of the Minimum Temperature WMS layer.',
+                type=CustomSetting.TYPE_STRING,
+                default='min_t2m_c',
+                required=True,
+            ),
+            CustomSetting(
+                name=self.SET_MEAN_TEMP_NAME,
+                description='Name of the Mean Temperature WMS layer.',
+                type=CustomSetting.TYPE_STRING,
+                default='mean_t2m_c',
+                required=True,
+            ),
+            CustomSetting(
+                name=self.SET_MAX_TEMP_NAME,
+                description='Name of the Maximum Temperature WMS layer.',
+                type=CustomSetting.TYPE_STRING,
+                default='max_t2m_c',
+                required=True,
+            ),
+            CustomSetting(
+                name=self.SET_TOT_PRECIP_NAME,
+                description='Name of the Total Precipitation WMS layer.',
+                type=CustomSetting.TYPE_STRING,
+                default='sum_tp_mm',
+                required=True,
+            ),
         )
-
-        return custom_settings
 
     def spatial_dataset_service_settings(self):
         """
@@ -93,7 +143,7 @@ class TempPrecipTrendsApp(TethysAppBase):
         """
         return (
             SpatialDatasetServiceSetting(
-                name=self.THREDDS_SDS_NAME,
+                name=self.SET_THREDDS_SDS_NAME,
                 description='THREDDS server hosting ERA 5 daily summary dataset.',
                 engine=SpatialDatasetServiceSetting.THREDDS,
                 required=True
