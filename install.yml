@@ -8,10 +8,12 @@ requirements:
   skip: false
   conda:
     channels:
+      - conda-forge
     packages:
+      - netcdf4
+      - siphon
+      - xarray
 
   pip:
-    - xarray
-    - zarr
 
 post:
