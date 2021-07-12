@@ -95,6 +95,44 @@ def jsonify(dataset, variable):
     return context
 
 
+def param_check(request):
+    """
+    Check that required parameters were passed.
+
+    Args:
+        request(Django HttpRequest): Django GET request with input parameters.
+
+    Returns:
+        Python Dict: Dictionary with success or error key  and a message.
+    """
+    if request.method != "GET":
+        return {"error": "only GET requests are allowed."}
+    elif not request.GET.get("geometry", None):
+        return {"error": "'geometry' is a required parameter."}
+    elif not request.GET.get("end_time", None):
+        return {"error": "'end_time' (YYYYMMDD) is a required parameter."}
+    else:
+        return {"success": "required parameters provided."}
+
+
+def overlap_ts(time_series):
+    """
+    Updates time series by adding one year to time-series dates
+
+    Args:
+        time_series(Python Dict): times_series dict returned by the get_data or get_cum_precip_data functions.
+
+    Returns:
+
+    """
+    new_date_list = []
+    for date in time_series['time_series']['datetime']:
+        new_date = f'{date[:3]}{int(date[3]) + 1}{date[4:]}'  # add one to the year for projected data overlap
+        new_date_list.append(new_date)
+
+        time_series['time_series']['datetime'] = new_date_list
+
+
 def extract_time_series_at_location(catalog, geometry, variable, start_time=None, end_time=None, vertical_level=None):
     """
     Extract a time series from a THREDDS dataset at the given location.
@@ -120,8 +158,8 @@ def extract_time_series_at_location(catalog, geometry, variable, start_time=None
         query.lonlat_point(coordinates[0], coordinates[1])
 
         # Filter by time
-        if end_time is None:
-            end_time = datetime.utcnow()
+        if isinstance(end_time, str):
+            end_time = datetime.strptime(end_time, '%Y%m%d')
 
         if start_time is None:
             start_time = end_time + relativedelta(months=-9)
@@ -146,7 +184,7 @@ def extract_time_series_at_location(catalog, geometry, variable, start_time=None
 
     except OSError as e:
         if 'NetCDF: Unknown file format' in str(e):
-            raise ValueError("We're sorry, but we don't support querying this type of dataset at this time. "
+            raise ValueError("We are sorry, but we don't support querying this type of dataset at this time. "
                              "Please try another dataset.")
         else:
             raise e

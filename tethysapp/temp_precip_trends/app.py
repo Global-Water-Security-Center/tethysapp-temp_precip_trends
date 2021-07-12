@@ -69,6 +69,16 @@ class TempPrecipTrends(TethysAppBase):
                 url='get-cum-precip',
                 controller='temp_precip_trends.api.get_cumulative_precipitation'
             ),
+            UrlMap(
+                name='proj_mean_temp',
+                url='get-proj-mean_temp',
+                controller='temp_precip_trends.api.get_projected_mean_temperature'
+            ),
+            UrlMap(
+                name='proj_cum_precip',
+                url='get-proj-cum-precip',
+                controller='temp_precip_trends.api.get_projected_cumulative_precipitation'
+            ),
         )
 
         return url_maps
