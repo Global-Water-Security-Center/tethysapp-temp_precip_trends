@@ -13,7 +13,7 @@ def get_data(variable, params):
     Calculate cumulative precipitation over given time.
 
     Args:
-        ariable(str): Name of the variable to query.
+        variable(str): Name of the variable to query.
         params(Python Dict): Python dictionary with request parameters.
 
     Returns:
@@ -146,7 +146,7 @@ def extract_time_series_at_location(catalog, geometry, variable, start_time=None
         vertical_level(number): The vertical level to query. Defaults to 100000.
 
     Returns:
-        netCDF5.Dataset: The data from the NCSS query.
+        xarray.Dataset: The data from the NCSS query.
     """
     try:
         dataset = catalog.datasets['ERA5 Daily Precipitation and Temperatures']
@@ -163,6 +163,8 @@ def extract_time_series_at_location(catalog, geometry, variable, start_time=None
 
         if start_time is None:
             start_time = end_time + relativedelta(months=-9)
+        elif isinstance(start_time, str):
+            start_time = datetime.strptime(start_time, '%Y%m%d')
 
         query.time_range(start_time, end_time)
 
