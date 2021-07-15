@@ -53,6 +53,7 @@ class GwscMapLayout(MapLayout):
             layer_variable='temperature',
             selectable=False,
             visible=True,
+            server_type='thredds',
         )
         min_temp_layer = self.build_wms_layer(
             endpoint=dataset_wms_url,
@@ -61,6 +62,7 @@ class GwscMapLayout(MapLayout):
             layer_variable='temperature',
             selectable=False,
             visible=False,
+            server_type='thredds',
         )
         max_temp_layer = self.build_wms_layer(
             endpoint=dataset_wms_url,
@@ -69,6 +71,7 @@ class GwscMapLayout(MapLayout):
             layer_variable='temperature',
             selectable=False,
             visible=False,
+            server_type='thredds',
         )
         tot_precip_layer = self.build_wms_layer(
             endpoint=dataset_wms_url,
@@ -77,6 +80,7 @@ class GwscMapLayout(MapLayout):
             layer_variable='precipitation',
             selectable=False,
             visible=False,
+            server_type='thredds',
         )
         map_view.layers.extend([mean_temp_layer, min_temp_layer, max_temp_layer, tot_precip_layer])
 
