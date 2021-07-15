@@ -128,23 +128,74 @@ class FunctionsTests(TestCase):
 
         self.assertEqual(mock_ts['time_series']['datetime'], expected_result)
 
-    @mock.patch('tethysapp.temp_precip_trends.functions.app')
-    def test_extract_time_series_at_location(self, mock_app):
+    @mock.patch('tethysapp.temp_precip_trends.functions.xr')
+    def test_extract_time_series_at_location(self, mock_xr):
         mock_params = {'geometry': '{"type": "Point",  "coordinates": [40.23, -111.66]}',
-                       'end_time': 'test_end_time', 'start_time': 'test_start_time',
-                       'vertical_level': 'test_vertical_level'}
-        mock_variable = 'test_variable'
-        mock_catalog = 'test_spatial_ds'
+                       'end_time': '20200602', 'start_time': '20200601'}
+        mock_variable = 'min_t2m_c'
+        mock_datasets = {'ERA5 Daily Precipitation and Temperatures': mock.MagicMock()}
+        mock_catalog = mock.MagicMock()
+        mock_catalog.datasets = mock_datasets
 
         expected_result = {'test': 'test data'}
-
-        mock_app.get_spatial_dataset_service.return_value = mock_catalog
+        mock_xr.open_dataset.return_value = expected_result
+        mock_xr.backends.NetCDF4DataStore = mock.MagicMock()
 
         ret = functions.extract_time_series_at_location(
             catalog=mock_catalog,
             geometry=mock_params['geometry'],
             variable=mock_variable,
             start_time=mock_params['start_time'],
-            end_time=mock_params['end_time'],
-            vertical_level=mock_params['vertical_level']
+            end_time=mock_params['end_time']
         )
+
+        self.assertEqual(ret, expected_result)
+
+    def test_extract_time_series_at_location_exception(self):
+        mock_params = {'geometry': '{"type": "Point",  "coordinates": [40.23, -111.66]}',
+                       'end_time': '20200602', 'start_time': '20200601'}
+        mock_variable = 'min_t2m_c'
+        mock_catalog = mock.MagicMock()
+        mock_catalog.datasets = {
+            'ERA5 Daily Precipitation and Temperatures': mock.MagicMock(
+                subset=mock.MagicMock(side_effect=OSError('NetCDF: Unknown file format'))
+            )
+        }
+
+        expected_result = ("We are sorry, but we don't support querying this type of dataset at this time. "
+                           "Please try another dataset.")
+
+        with self.assertRaises(ValueError) as ret:
+            functions.extract_time_series_at_location(
+                catalog=mock_catalog,
+                geometry=mock_params['geometry'],
+                variable=mock_variable,
+                start_time=mock_params['start_time'],
+                end_time=mock_params['end_time']
+            )
+
+        self.assertEqual(str(ret.exception), expected_result)
+
+    def test_extract_time_series_at_location_exception_else(self):
+        mock_params = {'geometry': '{"type": "Point",  "coordinates": [40.23, -111.66]}',
+                       'end_time': '20200602', 'start_time': '20200601'}
+        mock_variable = 'min_t2m_c'
+        mock_catalog = mock.MagicMock()
+        mock_catalog.datasets = {
+            'ERA5 Daily Precipitation and Temperatures': mock.MagicMock(
+                subset=mock.MagicMock(side_effect=OSError('Another OSError.'))
+            )
+        }
+
+        expected_result = "Another OSError."
+
+        with self.assertRaises(OSError) as ret:
+            functions.extract_time_series_at_location(
+                catalog=mock_catalog,
+                geometry=mock_params['geometry'],
+                variable=mock_variable,
+                start_time=mock_params['start_time'],
+                end_time=mock_params['end_time']
+            )
+
+        self.assertEqual(str(ret.exception), expected_result)
