@@ -1,5 +1,5 @@
 from tethys_sdk.base import TethysAppBase, url_map_maker
-from tethys_sdk.app_settings import CustomSetting, SpatialDatasetServiceSetting
+from tethys_sdk.app_settings import SpatialDatasetServiceSetting
 
 
 class TempPrecipTrends(TethysAppBase):
@@ -18,19 +18,8 @@ class TempPrecipTrends(TethysAppBase):
     enable_feedback = False
     feedback_emails = []
 
-    THREDDS_SERVICE_NAME = 'thredds_service'
-
-    def spatial_dataset_service_settings(self):
-        sds_settings = (
-            SpatialDatasetServiceSetting(
-                name=self.THREDDS_SERVICE_NAME,
-                description='THREDDS service for app to use',
-                engine=SpatialDatasetServiceSetting.THREDDS,
-                required=True,
-            ),
-        )
-
-        return sds_settings
+    SET_THREDDS_SDS_NAME = 'primary_thredds'
+    SET_THREDDS_DATASET_NAME = 'ERA5 Daily Precipitation and Temperatures'
 
     def url_maps(self):
         """
@@ -83,14 +72,14 @@ class TempPrecipTrends(TethysAppBase):
 
         return url_maps
 
-    def custom_settings(self):
-        custom_settings = (
-            CustomSetting(
-              name='data_path',
-              type=CustomSetting.TYPE_STRING,
-              description='Data location',
-              required=False
+    def spatial_dataset_service_settings(self):
+        sds_settings = (
+            SpatialDatasetServiceSetting(
+                name=self.SET_THREDDS_SDS_NAME,
+                description='THREDDS service for app to use',
+                engine=SpatialDatasetServiceSetting.THREDDS,
+                required=True,
             ),
         )
 
-        return custom_settings
+        return sds_settings

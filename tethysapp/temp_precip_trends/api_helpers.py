@@ -5,28 +5,27 @@ import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from .app import TempPrecipTrends as app
 
-
-def get_data(variable, params):
+def get_data(variable, dataset, params):
     """
-    Calculate cumulative precipitation over given time.
+    Get available variable data for specified location and time range. Available variables are: min_t2m_c, mean_t2m_c,
+    max_t2m_c, and sum_tp_mm.
 
     Args:
         variable(str): Name of the variable to query.
-        params(Python Dict): Python dictionary with request parameters.
+        dataset(siphon.catalog.Dataset): A THREDDS dataset from a catalog.
+        params(dict): Python dictionary with request parameters.
 
     Returns:
-        Python Dict: JSON-compatible Python Dict with specified variable data.
+        dict: JSON-compatible Python Dict with specified variable data.
     """
-    catalog = app.get_spatial_dataset_service(app.THREDDS_SERVICE_NAME, as_engine=True)
     geometry = params['geometry']
     start_time = params.get('start_time', None)
     end_time = params.get('end_time', None)
     vertical_level = params.get('vertical_level', None)
 
     time_series = extract_time_series_at_location(
-        catalog=catalog,
+        dataset=dataset,
         geometry=geometry,
         variable=variable,
         start_time=start_time,
@@ -37,24 +36,24 @@ def get_data(variable, params):
     return jsonify(time_series, variable)
 
 
-def get_cum_precip_data(params):
+def get_cum_precip_data(dataset, params):
     """
     Calculate cumulative precipitation over given time.
 
     Args:
-        params(Python Dict): Python dictionary with request parameters.
+        dataset(siphon.catalog.Dataset): THREDDS dataset.
+        params(dict): Python dictionary with request parameters.
 
     Returns:
-        Python Dict: JSON-compatible Python Dict with cummulative precipitation.
+        dict: JSON-compatible Python Dict with cummulative precipitation.
     """
-    catalog = app.get_spatial_dataset_service(app.THREDDS_SERVICE_NAME, as_engine=True)
     geometry = params['geometry']
     start_time = params.get('start_time', None)
     end_time = params.get('end_time', None)
     vertical_level = params.get('vertical_level', None)
 
     time_series = extract_time_series_at_location(
-        catalog=catalog,
+        dataset=dataset,
         geometry=geometry,
         variable='sum_tp_mm',
         start_time=start_time,
@@ -77,22 +76,20 @@ def jsonify(dataset, variable):
         variable(str): Name of the variable to query.
 
     Returns:
-        Python Dict: JSON-compatible Python Dict.
+        dict: JSON-compatible Python Dict.
     """
     df = pd.DataFrame(data={variable: np.transpose(dataset[variable].data)}, index=dataset.time.data)
     df.index = df.index.strftime('%Y-%m-%dT%H:%M:%SZ')
     df.index.name = 'datetime'
 
-    context = {
+    json_dict = {
         'time_series': {
             'datetime': df.index.tolist(),
             variable: df[variable].to_list()
         }
     }
 
-    context['time_series'].update(df.to_dict(orient='list'))
-
-    return context
+    return json_dict
 
 
 def param_check(request):
@@ -100,10 +97,10 @@ def param_check(request):
     Check that required parameters were passed.
 
     Args:
-        request(Django HttpRequest): Django GET request with input parameters.
+        request(rest_framework.request.Request): GET request with input parameters.
 
     Returns:
-        Python Dict: Dictionary with success or error key  and a message.
+        dict: Dictionary with success or error key  and a message.
     """
     if request.method != "GET":
         return {"error": "only GET requests are allowed."}
@@ -120,25 +117,22 @@ def overlap_ts(time_series):
     Updates time series by adding one year to time-series dates
 
     Args:
-        time_series(Python Dict): times_series dict returned by the get_data or get_cum_precip_data functions.
-
-    Returns:
-
+        time_series(dict): times_series dict returned by the get_data or get_cum_precip_data functions.
     """
     new_date_list = []
     for date in time_series['time_series']['datetime']:
         new_date = f'{date[:3]}{int(date[3]) + 1}{date[4:]}'  # add one to the year for projected data overlap
         new_date_list.append(new_date)
 
-        time_series['time_series']['datetime'] = new_date_list
+    time_series['time_series']['datetime'] = new_date_list
 
 
-def extract_time_series_at_location(catalog, geometry, variable, start_time=None, end_time=None, vertical_level=None):
+def extract_time_series_at_location(dataset, geometry, variable, start_time=None, end_time=None, vertical_level=100000):
     """
     Extract a time series from a THREDDS dataset at the given location.
 
     Args:
-        catalog(siphon.catalog.TDSCatalog): a Siphon catalog object bound to a valid THREDDS service.
+        dataset(siphon.catalog.Dataset): a THREDDS dataset from a catalog.
         geometry(geojson): A geojson object representing the location.
         variable(str): Name of the variable to query.
         start_time(datetime): Start of time range to query. Defaults to 9 months before end_time.
@@ -149,14 +143,6 @@ def extract_time_series_at_location(catalog, geometry, variable, start_time=None
         xarray.Dataset: The data from the NCSS query.
     """
     try:
-        dataset = catalog.datasets['ERA5 Daily Precipitation and Temperatures']
-        ncss = dataset.subset()
-        query = ncss.query()
-
-        # Filter by location
-        coordinates = json.loads(geometry)['coordinates']
-        query.lonlat_point(coordinates[0], coordinates[1])
-
         # Filter by time
         if isinstance(end_time, str):
             end_time = datetime.strptime(end_time, '%Y%m%d')
@@ -166,16 +152,20 @@ def extract_time_series_at_location(catalog, geometry, variable, start_time=None
         elif isinstance(start_time, str):
             start_time = datetime.strptime(start_time, '%Y%m%d')
 
+        ncss = dataset.subset()
+        query = ncss.query()
+
+        # Filter by location
+        coordinates = json.loads(geometry)['coordinates']
+        query.lonlat_point(coordinates[0], coordinates[1])
+
         query.time_range(start_time, end_time)
 
         # Filter by variable
         query.variables(variable).accept('netcdf')
 
         # Filter by vertical level
-        if vertical_level is not None:
-            query.vertical_level(vertical_level)
-        else:
-            query.vertical_level(100000)
+        query.vertical_level(vertical_level)
 
         # Get the data
         data = ncss.get_data(query)
