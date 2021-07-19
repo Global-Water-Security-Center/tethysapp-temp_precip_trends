@@ -1,5 +1,8 @@
+import datetime as dt
 import logging
 from urllib.parse import urlparse, urljoin
+
+from django.http import JsonResponse
 
 from tethys_sdk.layouts import MapLayout
 
@@ -10,9 +13,10 @@ log = logging.getLogger(f'tethys.{__name__}')
 
 class GwscMapLayout(MapLayout):
     app = app
+    template_name = 'temp_precip_trends/map_view.html'
     base_template = 'temp_precip_trends/base.html'
-    map_title = 'Trends'
-    map_subtitle = '<no time>'  # TODO: set to the valid time
+    map_title = ''  # Map title set dynamically to valid time
+    map_subtitle = ''
     sds_setting_name = app.SET_THREDDS_SDS_NAME
     default_center = [-98.583, 39.833]  # USA Center
     initial_map_extent = [-65.69, 23.81, -129.17, 49.38]  # USA EPSG:2374
@@ -25,25 +29,17 @@ class GwscMapLayout(MapLayout):
         """
         Add layers to the given MapView and create associated layer group objects.
         """
-        thredds_wms_base = app.get_custom_setting(app.SET_THREDDS_WMS_BASE)
-        dataset_url_path = app.get_custom_setting(app.SET_DATASET_URL_PATH)
         min_temp_layer_name = app.get_custom_setting(app.SET_MIN_TEMP_NAME)
         mean_temp_layer_name = app.get_custom_setting(app.SET_MEAN_TEMP_NAME)
         max_temp_layer_name = app.get_custom_setting(app.SET_MAX_TEMP_NAME)
         tot_precip_layer_name = app.get_custom_setting(app.SET_TOT_PRECIP_NAME)
 
         # Get Catalog URL
-        thredds_engine = self.sds_setting.get_engine(public=True)
-        catalog_url = urlparse(thredds_engine.catalog_url)
-        log.debug(f'Catalog: {thredds_engine}')
-        log.debug(f'Catalog URL: {catalog_url}')
-        log.debug(f'Datasets: {thredds_engine.datasets}')
-
-        # Build WMS URL
-        base_wms_url = urljoin(f'{catalog_url.scheme}://{catalog_url.netloc}', thredds_wms_base)
-        log.debug(f'Base WMS URL: {base_wms_url}')
-        dataset_wms_url = urljoin(base_wms_url, dataset_url_path)
-        log.debug(f'Dataset WMS URL: {dataset_wms_url}')
+        catalog = self.sds_setting.get_engine(public=True)
+        log.debug(f'Catalog: {catalog}')
+        log.debug(f'Datasets: {catalog.datasets}')
+        # Get WMS URL
+        dataset_wms_url = self.get_dataset_wms_endpoint(catalog)
 
         # Define layers and add to given MapView
         mean_temp_layer = self.build_wms_layer(
@@ -94,5 +90,46 @@ class GwscMapLayout(MapLayout):
             ),
         ]
 
-        # TODO: Add legend graphics
         return layer_groups
+
+    @staticmethod
+    def get_dataset_wms_endpoint(catalog):
+        """
+        Derive the URL for the WMS endpoint of the dataset.
+
+        Args:
+            catalog (siphon.TDSCatalog): The Catalog object bound to public endpoint of the THREDDS server.
+
+        Returns:
+            str: The WMS URL.
+        """
+        thredds_wms_base = app.get_custom_setting(app.SET_THREDDS_WMS_BASE)
+        dataset_url_path = app.get_custom_setting(app.SET_DATASET_URL_PATH)
+        catalog_url = urlparse(catalog.catalog_url)
+        log.debug(f'Catalog URL: {catalog_url}')
+        # Build WMS URL
+        base_wms_url = urljoin(f'{catalog_url.scheme}://{catalog_url.netloc}', thredds_wms_base)
+        log.debug(f'Base WMS URL: {base_wms_url}')
+        dataset_wms_url = urljoin(base_wms_url, dataset_url_path)
+        log.debug(f'Dataset WMS URL: {dataset_wms_url}')
+        return dataset_wms_url
+
+    # Custom AJAX Endpoints
+    def get_valid_time(self, request, *args, **kwargs):
+        """
+        Get the last time step to use as the valid time. This method is called via AJAX.
+
+        Args:
+            request (django.HttpRequest): The Django request.
+        """
+        catalog = self.sds_setting.get_engine(public=True)
+        # TODO: Replace with CustomSetting after rebasing w/ Michael's stuff.
+        dataset = catalog.datasets['ERA5 Daily Precipitation and Temperatures']
+        ncss = dataset.subset()
+        log.debug(f'Dataset Time Span: {ncss.metadata.time_span}')
+        last_time_step = ncss.metadata.time_span.get('end')
+        log.debug(f'End of Time Span: {last_time_step}')
+        last_time_step_str = dt.datetime \
+            .strptime(last_time_step, '%Y-%m-%dT%H:%M:%SZ') \
+            .strftime('%-d %B %Y')
+        return JsonResponse({'valid_time': last_time_step_str})
