@@ -162,12 +162,13 @@ class ApiTests(TestCase):
 
         self.assertEqual(expected_result, json.loads(ret.content))
 
+    @mock.patch('tethysapp.temp_precip_trends.api.log')
     @mock.patch('tethysapp.temp_precip_trends.api.relativedelta')
     @mock.patch('tethysapp.temp_precip_trends.api.datetime')
     @mock.patch('tethysapp.temp_precip_trends.api.overlap_ts')
     @mock.patch('tethysapp.temp_precip_trends.api.param_check')
     @mock.patch('tethysapp.temp_precip_trends.api.get_cum_precip_data')
-    def test_get_proj_cum_precip_exceptions(self, mock_get_cpd, mock_param_check, mock_overlap_ts, _, __):
+    def test_get_proj_cum_precip_exceptions(self, mock_get_cpd, mock_param_check, mock_overlap_ts, _, __, ___):
         mock_request = self.factory.get('/get-proj-cum-precip/', {'end_time': 'test'})
 
         force_authenticate(mock_request, user=self.user)

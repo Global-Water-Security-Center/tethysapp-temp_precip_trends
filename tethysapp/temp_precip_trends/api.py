@@ -18,7 +18,7 @@ def get_min_temperature(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.SET_THREDDS_DATASET_NAME]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
             time_series = get_data('min_t2m_c', dataset, params)
 
@@ -38,7 +38,7 @@ def get_max_temperature(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.SET_THREDDS_DATASET_NAME]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
             time_series = get_data('max_t2m_c', dataset, params)
 
@@ -58,7 +58,7 @@ def get_mean_temperature(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.SET_THREDDS_DATASET_NAME]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
             time_series = get_data('mean_t2m_c', dataset, params)
 
@@ -78,7 +78,7 @@ def get_total_precipitation(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.SET_THREDDS_DATASET_NAME]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
             time_series = get_data('sum_tp_mm', dataset, params)
 
@@ -98,7 +98,7 @@ def get_cumulative_precipitation(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.SET_THREDDS_DATASET_NAME]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
             time_series = get_cum_precip_data(dataset, params)
 
@@ -118,7 +118,7 @@ def get_projected_mean_temperature(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.SET_THREDDS_DATASET_NAME]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET.copy()  # create a mutable copy
             params['start_time'] = datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
             params['end_time'] = datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-9)
@@ -142,7 +142,7 @@ def get_projected_cumulative_precipitation(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.SET_THREDDS_DATASET_NAME]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET.copy()  # create a mutable copy
             params['start_time'] = datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
             params['end_time'] = datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-9)
