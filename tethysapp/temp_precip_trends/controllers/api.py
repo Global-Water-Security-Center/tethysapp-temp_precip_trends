@@ -1,13 +1,14 @@
 from rest_framework.decorators import api_view, authentication_classes
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
-from django.http import JsonResponse
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-
-from .app import TempPrecipTrendsApp as app
-from .api_helpers import get_data, get_cum_precip_data, param_check, overlap_ts
-
 import logging
+
+from django.http import JsonResponse
+
+from tethysapp.temp_precip_trends.app import TempPrecipTrendsApp as app
+from tethysapp.temp_precip_trends.api_helpers import get_data, get_cum_precip_data, param_check, overlap_ts
+
 log = logging.getLogger(f'tethys.{__name__}')
 
 

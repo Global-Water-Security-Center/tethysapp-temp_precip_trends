@@ -31,7 +31,7 @@ class TempPrecipTrendsApp(TethysAppBase):
         """
         Add controllers
         """
-        from .controllers import GwscMapLayout
+        from .controllers.map_view import GwscMapLayout
         UrlMap = url_map_maker(self.root_url)
 
         url_maps = (
@@ -43,37 +43,37 @@ class TempPrecipTrendsApp(TethysAppBase):
             UrlMap(
                 name='min_temp',
                 url='api/get-min-temp',
-                controller='temp_precip_trends.api.get_min_temperature'
+                controller='temp_precip_trends.controllers.api.get_min_temperature'
             ),
             UrlMap(
                 name='max_temp',
                 url='api/get-max-temp',
-                controller='temp_precip_trends.api.get_max_temperature'
+                controller='temp_precip_trends.controllers.api.get_max_temperature'
             ),
             UrlMap(
                 name='mean_temp',
                 url='api/get-mean-temp',
-                controller='temp_precip_trends.api.get_mean_temperature'
+                controller='temp_precip_trends.controllers.api.get_mean_temperature'
             ),
             UrlMap(
                 name='total_precip',
                 url='api/get-total-precip',
-                controller='temp_precip_trends.api.get_total_precipitation'
+                controller='temp_precip_trends.controllers.api.get_total_precipitation'
             ),
             UrlMap(
                 name='cum_precip',
                 url='api/get-cum-precip',
-                controller='temp_precip_trends.api.get_cumulative_precipitation'
+                controller='temp_precip_trends.controllers.api.get_cumulative_precipitation'
             ),
             UrlMap(
                 name='proj_mean_temp',
                 url='api/get-proj-mean_temp',
-                controller='temp_precip_trends.api.get_projected_mean_temperature'
+                controller='temp_precip_trends.controllers.api.get_projected_mean_temperature'
             ),
             UrlMap(
                 name='proj_cum_precip',
                 url='api/get-proj-cum-precip',
-                controller='temp_precip_trends.api.get_projected_cumulative_precipitation'
+                controller='temp_precip_trends.controllers.api.get_projected_cumulative_precipitation'
             ),
         )
 
