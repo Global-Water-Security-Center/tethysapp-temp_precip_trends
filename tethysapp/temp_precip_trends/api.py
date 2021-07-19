@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from .app import TempPrecipTrends as app
+from .app import TempPrecipTrendsApp as app
 from .api_helpers import get_data, get_cum_precip_data, param_check, overlap_ts
 
 import logging
