@@ -123,8 +123,7 @@ class GwscMapLayout(MapLayout):
             request (django.HttpRequest): The Django request.
         """
         catalog = self.sds_setting.get_engine(public=True)
-        # TODO: Replace with CustomSetting after rebasing w/ Michael's stuff.
-        dataset = catalog.datasets['ERA5 Daily Precipitation and Temperatures']
+        dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
         ncss = dataset.subset()
         log.debug(f'Dataset Time Span: {ncss.metadata.time_span}')
         last_time_step = ncss.metadata.time_span.get('end')
