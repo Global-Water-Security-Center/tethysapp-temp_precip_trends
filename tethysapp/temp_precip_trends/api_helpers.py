@@ -1,9 +1,10 @@
-import json
-import numpy as np
-import xarray as xr
-import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import json
+
+import numpy as np
+import pandas as pd
+import xarray as xr
 
 
 def get_data(variable, dataset, params):

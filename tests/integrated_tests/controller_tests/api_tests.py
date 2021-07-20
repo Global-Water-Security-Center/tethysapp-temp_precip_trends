@@ -1,8 +1,8 @@
-from unittest import TestCase, mock
 import json
+from unittest import TestCase, mock
 
-from rest_framework.test import APIRequestFactory
-from rest_framework.test import force_authenticate
+from rest_framework.test import force_authenticate, APIRequestFactory
+
 from tethysapp.temp_precip_trends.controllers import api
 
 
