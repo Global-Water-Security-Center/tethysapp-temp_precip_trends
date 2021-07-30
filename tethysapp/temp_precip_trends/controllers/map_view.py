@@ -15,15 +15,19 @@ class GwscMapLayout(MapLayout):
     app = app
     template_name = 'temp_precip_trends/map_view.html'
     base_template = 'temp_precip_trends/base.html'
+    sds_setting_name = app.SET_THREDDS_SDS_NAME
     map_title = ''  # Map title set dynamically to valid time
     map_subtitle = ''
-    sds_setting_name = app.SET_THREDDS_SDS_NAME
     default_center = [-98.583, 39.833]  # USA Center
     initial_map_extent = [-65.69, 23.81, -129.17, 49.38]  # USA EPSG:2374
     default_zoom = 5
     max_zoom = 16
     min_zoom = 2
+    plot_slide_sheet = True
     show_legends = True
+    show_map_clicks = True
+    show_map_click_popup = False
+    show_properties_popup = False
 
     def compose_layers(self, request, map_view, *args, **kwargs):
         """
@@ -90,6 +94,29 @@ class GwscMapLayout(MapLayout):
             ),
         ]
 
+        # Layer for testing
+        if False:
+            self.geoserver_workspace = 'topp'
+            usa_states = self.build_wms_layer(
+                endpoint='http://192.168.1.26:8181/geoserver/wms',
+                layer_name='topp:states',
+                layer_title="USA States",
+                layer_variable='population',
+                geometry_attribute='the_geom',
+                visible=True,
+                selectable=True,
+            )
+            map_view.layers.insert(0, usa_states)
+            layer_groups.insert(
+                0,
+                self.build_layer_group(
+                    id='test-layer-group',
+                    display_name='USA States',
+                    layer_control='checkbox',
+                    layers=[usa_states],
+                ),
+            )
+
         return layer_groups
 
     @staticmethod
@@ -128,7 +155,4 @@ class GwscMapLayout(MapLayout):
         log.debug(f'Dataset Time Span: {ncss.metadata.time_span}')
         last_time_step = ncss.metadata.time_span.get('end')
         log.debug(f'End of Time Span: {last_time_step}')
-        last_time_step_str = dt.datetime \
-            .strptime(last_time_step, '%Y-%m-%dT%H:%M:%SZ') \
-            .strftime('%-d %B %Y')
-        return JsonResponse({'valid_time': last_time_step_str})
+        return JsonResponse({'valid_time': last_time_step})

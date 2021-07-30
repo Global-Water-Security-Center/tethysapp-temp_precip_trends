@@ -67,7 +67,7 @@ class TempPrecipTrendsApp(TethysAppBase):
             ),
             UrlMap(
                 name='proj_mean_temp',
-                url='api/get-proj-mean_temp',
+                url='api/get-proj-mean-temp',
                 controller='temp_precip_trends.controllers.api.get_projected_mean_temperature'
             ),
             UrlMap(
