@@ -25,6 +25,7 @@ var TPT_MAP_VIEW = (function() {
  	      };
 
  	var public_interface,				// Object returned by the module
+ 	    m_auth_token,                   // User's authentication token for the API
  		m_map,				            // MapView object
  		m_plot,                         // Slide Sheet Plotly object/element
  		m_plot_data,                    // Data object of the slide sheet plot
@@ -46,8 +47,10 @@ var TPT_MAP_VIEW = (function() {
  	*                    PRIVATE FUNCTION IMPLEMENTATIONS
  	*************************************************************************/
  	init_members = function() {
+ 	    let tpt_map_attrs = $('#tpt-map-attributes');
  	    m_map = TETHYS_MAP_VIEW.getMap();
  	    m_plot = MAP_LAYOUT.get_plot();
+ 	    m_auth_token = tpt_map_attrs.data('auth-token');
  	};
 
  	init_valid_time = function() {
@@ -97,10 +100,13 @@ var TPT_MAP_VIEW = (function() {
             },
             'xaxis': {
                'type': 'date',
+               'tickformat': '%b%y',
+               'dtick': 'M1',
+               'showgrid': true,
             },
             'yaxis': {
                 'title': {
-                    'text': 'Temperature (C)'
+                    'text': 'Temperature (\u00B0C)'
                 },
             },
             'yaxis2': {
@@ -159,6 +165,7 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcpbar',
+                'hovertemplate': "Daily. Precip.: %{y:.1f} mm (%{x})",
                 'name': 'Daily Precip.',
                 'type': 'bar',
                 'yaxis': 'y2',
@@ -171,6 +178,7 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcp',
+                'hovertemplate': "Cum. Precip.: %{y:.1f} mm (%{x})",
                 'name': 'Cumulative Precip. this Year',
                 'type': 'scatter',
                 'yaxis': 'y2',
@@ -184,11 +192,12 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'temp',
+                'hovertemplate': "Last Year's Temp: %{y:.1f} \u00B0C (%{x})",  // TODO: Year -1?
                 'name': "Last Year's Temperature",
                 'type': 'scatter',
                 'line': {
                     'color': '#868686',
-                    'width': 1,
+                    'width': 1.5,
                 },
             },
             // prj_cum_prcp
@@ -196,9 +205,15 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcp',
+                'hovertemplate': "Last Year's Cum. Precip.: %{y:.1f} mm (%{x})",  // TODO: Year -1?
                 'name': "Last Year's Cumulative Precip.",
                 'type': 'scatter',
                 'yaxis': 'y2',
+                'line': {
+                    'color': '#868686',
+                    'dash': 'dot',
+                    'width': 1.5,
+                },
             },
         ];
 
@@ -244,6 +259,7 @@ var TPT_MAP_VIEW = (function() {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
+                'Authorization': `Token ${m_auth_token}`
             },
         });
         return response.json();

@@ -3,6 +3,9 @@ import logging
 from urllib.parse import urlparse, urljoin
 
 from django.http import JsonResponse
+from django.shortcuts import redirect
+from rest_framework.authtoken.models import Token
+
 
 from tethys_sdk.layouts import MapLayout
 
@@ -118,6 +121,17 @@ class GwscMapLayout(MapLayout):
             )
 
         return layer_groups
+
+    def get_context(self, request, context, *args, **kwargs):
+        # Make sure to call super get_context or everything will break!
+        super().get_context(request, context, *args, **kwargs)
+
+        # Get auth token for user and pass to context
+        auth_token, _ = Token.objects.get_or_create(user=request.user)
+        context.update({
+            'auth_token': auth_token.key
+        })
+        return context
 
     @staticmethod
     def get_dataset_wms_endpoint(catalog):
