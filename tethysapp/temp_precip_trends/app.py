@@ -1,5 +1,6 @@
 from tethys_sdk.base import TethysAppBase, url_map_maker
 from tethys_sdk.app_settings import CustomSetting, SpatialDatasetServiceSetting
+from django.contrib.auth.decorators import login_required
 
 
 class TempPrecipTrendsApp(TethysAppBase):
@@ -38,7 +39,7 @@ class TempPrecipTrendsApp(TethysAppBase):
             UrlMap(
                 name='home',
                 url='temp-precip-trends',
-                controller=GwscMapLayout.as_controller(app=TempPrecipTrendsApp)
+                controller=login_required(GwscMapLayout.as_controller())
             ),
             UrlMap(
                 name='min_temp',
