@@ -158,4 +158,18 @@ class GwscMapLayoutTests(TethysTestCase):
         ret = GwscMapLayout().get_valid_time(request=mock_request)
 
         self.assertIsInstance(ret, JsonResponse)
-        self.assertEqual(ret.content, b'{"valid_time": "5 July 2021"}')
+        self.assertEqual(ret.content, b'{"valid_time": "2021-07-05T03:17:58Z"}')
+
+    @mock.patch('tethysapp.temp_precip_trends.controllers.map_view.MapLayout.get_context')
+    @mock.patch('tethysapp.temp_precip_trends.controllers.map_view.Token')
+    def test_get_context(self, mock_Token, mock_super_get_context):
+        mock_auth_token = mock.MagicMock(key='foo')
+        mock_Token.objects.get_or_create.return_value = (mock_auth_token, 'bar')
+        mock_super_get_context.return_value = {}
+        mock_request = mock.MagicMock()
+        context = {}
+
+        ret = GwscMapLayout().get_context(mock_request, context)
+
+        self.assertIn('auth_token', ret)
+        self.assertEqual(ret['auth_token'], 'foo')

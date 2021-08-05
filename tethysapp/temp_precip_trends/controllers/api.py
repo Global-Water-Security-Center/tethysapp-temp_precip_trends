@@ -25,9 +25,10 @@ def get_min_temperature(request):
 
             return JsonResponse(time_series)
 
-        except Exception as e:
-            print(e)
-            return JsonResponse({'error': 'Something went wrong while retrieving the data.'})
+        except Exception:
+            error_msg = 'Something went wrong while retrieving the data.'
+            log.exception(error_msg)
+            return JsonResponse({'error': error_msg})
     else:
         return JsonResponse(check_request)
 
@@ -45,9 +46,10 @@ def get_max_temperature(request):
 
             return JsonResponse(time_series)
 
-        except Exception as e:
-            print(e)
-            return JsonResponse({'error': 'Something went wrong while retrieving the data.'})
+        except Exception:
+            error_msg = 'Something went wrong while retrieving the data.'
+            log.exception(error_msg)
+            return JsonResponse({'error': error_msg})
     else:
         return JsonResponse(check_request)
 
@@ -65,9 +67,10 @@ def get_mean_temperature(request):
 
             return JsonResponse(time_series)
 
-        except Exception as e:
-            print(e)
-            return JsonResponse({'error': 'Something went wrong while retrieving the data.'})
+        except Exception:
+            error_msg = 'Something went wrong while retrieving the data.'
+            log.exception(error_msg)
+            return JsonResponse({'error': error_msg})
     else:
         return JsonResponse(check_request)
 
@@ -90,9 +93,10 @@ def get_total_precipitation(request):
 
             return JsonResponse(time_series)
 
-        except Exception as e:
-            print(e)
-            return JsonResponse({'error': 'Something went wrong while retrieving the data.'})
+        except Exception:
+            error_msg = 'Something went wrong while retrieving the data.'
+            log.exception(error_msg)
+            return JsonResponse({'error': error_msg})
     else:
         return JsonResponse(check_request)
 
@@ -110,9 +114,10 @@ def get_cumulative_precipitation(request):
 
             return JsonResponse(time_series)
 
-        except Exception as e:
-            print(e)
-            return JsonResponse({'error': 'Something went wrong while retrieving the data.'})
+        except Exception:
+            error_msg = 'Something went wrong while retrieving the data.'
+            log.exception(error_msg)
+            return JsonResponse({'error': error_msg})
     else:
         return JsonResponse(check_request)
 
@@ -135,9 +140,10 @@ def get_projected_mean_temperature(request):
 
             return JsonResponse(time_series)
 
-        except Exception as e:
-            print(e)
-            return JsonResponse({'error': 'Something went wrong while retrieving the data.'})
+        except Exception:
+            error_msg = 'Something went wrong while retrieving the data.'
+            log.exception(error_msg)
+            return JsonResponse({'error': error_msg})
     else:
         return JsonResponse(check_request)
 
@@ -159,8 +165,9 @@ def get_projected_cumulative_precipitation(request):
 
             return JsonResponse(time_series)
 
-        except Exception as e:
-            log.exception(e)
-            return JsonResponse({'error': 'Something went wrong while retrieving the data.'})
+        except Exception:
+            error_msg = 'Something went wrong while retrieving the data.'
+            log.exception(error_msg)
+            return JsonResponse({'error': error_msg})
     else:
         return JsonResponse(check_request)

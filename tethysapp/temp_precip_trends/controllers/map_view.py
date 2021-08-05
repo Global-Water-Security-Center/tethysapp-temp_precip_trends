@@ -1,9 +1,7 @@
-import datetime as dt
 import logging
 from urllib.parse import urlparse, urljoin
 
 from django.http import JsonResponse
-from django.shortcuts import redirect
 from rest_framework.authtoken.models import Token
 
 

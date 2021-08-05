@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from tethysapp.temp_precip_trends.api_helpers import (get_data, get_cum_precip_data, jsonify, overlap_ts, param_check,
+from tethysapp.temp_precip_trends.api_helpers import (get_data, jsonify, overlap_ts, param_check,
                                                       extract_time_series_at_location)
 
 
@@ -28,14 +28,38 @@ class APIHelpersTests(TestCase):
             variable=mock_variable,
             start_time=mock_params['start_time'],
             end_time=mock_params['end_time'],
-            vertical_level=mock_params['vertical_level']
         )
 
         self.assertEqual(expected_result, ret)
 
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.jsonify')
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.extract_time_series_at_location')
-    def test_get_cum_precip_data(self, mock_extract_ts, mock_jsonify):
+    def test_get_data_not_json(self, mock_extract_ts, mock_jsonify):
+        mock_params = {'geometry': 'test_geom', 'end_time': 'test_end_time', 'start_time': 'test_start_time',
+                       'vertical_level': 'test_vertical_level'}
+        mock_variable = 'test_variable'
+        mock_dataset = 'test_spatial_ds'
+
+        expected_result = {'test': 'test data'}
+
+        mock_jsonify.return_value = expected_result
+
+        ret = get_data(mock_variable, mock_dataset, mock_params, return_json=False)
+
+        mock_extract_ts.assert_called_with(
+            dataset=mock_dataset,
+            geometry=mock_params['geometry'],
+            variable=mock_variable,
+            start_time=mock_params['start_time'],
+            end_time=mock_params['end_time'],
+        )
+
+        self.assertNotEqual(expected_result, ret)
+        self.assertEqual(mock_extract_ts(), ret)
+
+    @mock.patch('tethysapp.temp_precip_trends.api_helpers.jsonify')
+    @mock.patch('tethysapp.temp_precip_trends.api_helpers.extract_time_series_at_location')
+    def test_get_data_cum_sum(self, mock_extract_ts, mock_jsonify):
         mock_params = {'geometry': 'test_geom', 'end_time': 'test_end_time', 'start_time': 'test_start_time',
                        'vertical_level': 'test_vertical_level'}
         mock_variable = 'sum_tp_mm'
@@ -49,7 +73,7 @@ class APIHelpersTests(TestCase):
         mock_extract_ts.return_value = mock_time_series
         mock_jsonify.return_value = expected_result
 
-        ret = get_cum_precip_data(mock_dataset, mock_params)
+        ret = get_data(mock_variable, mock_dataset, mock_params, cum_sum=True)
 
         mock_extract_ts.assert_called_with(
             dataset=mock_dataset,
@@ -57,10 +81,9 @@ class APIHelpersTests(TestCase):
             variable=mock_variable,
             start_time=mock_params['start_time'],
             end_time=mock_params['end_time'],
-            vertical_level=mock_params['vertical_level']
         )
 
-        self.assertTrue(np.array_equal(mock_time_series['cum_pr_mm'].data, mock_cum_precip_data))
+        self.assertTrue(np.array_equal(mock_time_series['cumsum_sum_tp_mm'].data, mock_cum_precip_data))
         self.assertEqual(expected_result, ret)
 
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.pd')
@@ -78,8 +101,9 @@ class APIHelpersTests(TestCase):
 
         expected_result = {
             'time_series': {
+                'variable': mock_variable,
                 'datetime': mock_dates(),
-                mock_variable: mock_values()
+                'values': mock_values()
             }
         }
         ret = jsonify(mock_xr, mock_variable)
@@ -171,7 +195,6 @@ class APIHelpersTests(TestCase):
                 geometry=mock_params['geometry'],
                 variable=mock_variable,
                 end_time=mock_params['end_time'],
-                vertical_level=mock_params['vertical_level']
             )
 
         self.assertEqual(str(ret.exception), expected_result)
