@@ -83,7 +83,7 @@ var TPT_MAP_VIEW = (function() {
                 title_elem.innerHTML = m_valid_time_str;
 
                 // Set plot title
-                m_plot_title = 'Temp/Precip Trends through ' + m_valid_time_str;
+                m_plot_title = 'Temp. + Precip. Trends through ' + m_valid_time_str;
             });
     };
 
@@ -94,15 +94,35 @@ var TPT_MAP_VIEW = (function() {
 
         m_plot_layout = {
             'height': 0.85 * pss_height,
+            'margin': {
+                't': 0,
+            },
+            'modebar': {
+                'remove': [
+                    'lasso',
+                    'select2d',
+                    'zoomin',
+                    'zoomout',
+                    'pan'
+                ],
+                'add': [
+                    'hovercompare',
+                    'hoverclosest',
+                ],
+            },
+            'hovermode': 'x unified',
             'legend':{
                 'orientation': 'h',
-                'traceorder': 'grouped+reversed',
+                'traceorder': 'grouped',
             },
             'xaxis': {
                'type': 'date',
                'tickformat': '%b%y',
                'dtick': 'M1',
                'showgrid': true,
+               'spikemode': 'across',
+               'spikethickness': 2,
+               'hoverformat': '%B %d, %Y',
             },
             'yaxis': {
                 'title': {
@@ -125,8 +145,12 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'temp',
-                'hovertemplate': 'Min Temp: %{y:.1f} \u00B0C (%{x})',
+                'hovertemplate': 'Min Temp: %{y:.1f} \u00B0C',
+                'hoverlabel': {
+                    'namelength': 0,
+                },
                 'showlegend': false,
+                'legendrank': 20,
                 'name': 'Temperature Range',
                 'type': 'scatter',
                 'line': {
@@ -139,7 +163,11 @@ var TPT_MAP_VIEW = (function() {
                 'y': [],
                 'legendgroup': 'temp',
                 'name': 'Temperature Range',
-                'hovertemplate': 'Max Temp: %{y:.1f} \u00B0C (%{x})',
+                'hovertemplate': 'Max Temp: %{y:.1f} \u00B0C',
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 20,
                 'type': 'scatter',
                 'fill': 'tonexty',
                 'fillcolor': '#FF9999',
@@ -152,7 +180,11 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'temp',
-                'hovertemplate': 'Mean Temp: %{y:.1f} \u00B0C (%{x})',
+                'hovertemplate': 'Mean Temp: %{y:.1f} \u00B0C',
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 10,
                 'name': "Current Year's Temperature",
                 'type': 'scatter',
                 'line': {
@@ -165,7 +197,11 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcpbar',
-                'hovertemplate': "Daily. Precip.: %{y:.1f} mm (%{x})",
+                'hovertemplate': "Daily. Precip.: %{y:.1f} mm",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 50,
                 'name': 'Daily Precip.',
                 'type': 'bar',
                 'yaxis': 'y2',
@@ -178,7 +214,11 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcp',
-                'hovertemplate': "Cum. Precip.: %{y:.1f} mm (%{x})",
+                'hovertemplate': "Cum. Precip.: %{y:.1f} mm",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 60,
                 'name': 'Cumulative Precip. this Year',
                 'type': 'scatter',
                 'yaxis': 'y2',
@@ -192,7 +232,11 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'temp',
-                'hovertemplate': "Last Year's Temp: %{y:.1f} \u00B0C (%{x})",  // TODO: Year -1?
+                'hovertemplate': "Last Year's Temp: %{y:.1f} \u00B0C",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 30,
                 'name': "Last Year's Temperature",
                 'type': 'scatter',
                 'line': {
@@ -205,7 +249,11 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcp',
-                'hovertemplate': "Last Year's Cum. Precip.: %{y:.1f} mm (%{x})",  // TODO: Year -1?
+                'hovertemplate': "Last Year's Cum. Precip.: %{y:.1f} mm",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 70,
                 'name': "Last Year's Cumulative Precip.",
                 'type': 'scatter',
                 'yaxis': 'y2',
