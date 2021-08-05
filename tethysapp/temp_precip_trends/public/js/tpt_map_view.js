@@ -334,43 +334,43 @@ var TPT_MAP_VIEW = (function() {
             console.log(data);
             update_plot_series(0,  // min_temp
                 data.time_series.datetime,
-                data.time_series.min_t2m_c
+                data.time_series.values,
             );
         });
         fetch_time_series('max_temp', lat, lon).then((data) => {
             update_plot_series(1,  // max_temp
                 data.time_series.datetime,
-                data.time_series.max_t2m_c
+                data.time_series.values,
             );
         });
         fetch_time_series('mean_temp', lat, lon).then((data) => {
             update_plot_series(2,  // mean_temp
                 data.time_series.datetime,
-                data.time_series.mean_t2m_c
+                data.time_series.values,
             );
         });
         fetch_time_series('tot_prcp', lat, lon).then((data) => {
             update_plot_series(3,  // tot_prcp
                 data.time_series.datetime,
-                data.time_series.sum_tp_mm
+                data.time_series.values,
             );
         });
         fetch_time_series('cum_prcp', lat, lon).then((data) => {
             update_plot_series(4,  // cum_prcp
                 data.time_series.datetime,
-                data.time_series.cum_pr_mm
+                data.time_series.values,
             );
         });
         fetch_time_series('prj_mean_temp', lat, lon).then((data) => {
             update_plot_series(5,  // prj_mean_temp
                 data.time_series.datetime,
-                data.time_series.mean_t2m_c
+                data.time_series.values,
             );
         });
         fetch_time_series('prj_cum_prcp', lat, lon).then((data) => {
             update_plot_series(6,  // prj_cum_prcp
                 data.time_series.datetime,
-                data.time_series.cum_pr_mm
+                data.time_series.values,
             );
         });
     };

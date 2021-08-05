@@ -7,15 +7,18 @@ import pandas as pd
 import xarray as xr
 
 
-def get_data(variable, dataset, params):
+def get_data(variable, dataset, params, cum_sum=False, offset_dates=None, return_json=True):
     """
     Get available variable data for specified location and time range. Available variables are: min_t2m_c, mean_t2m_c,
     max_t2m_c, and sum_tp_mm.
 
     Args:
-        variable(str): Name of the variable to query.
-        dataset(siphon.catalog.Dataset): A THREDDS dataset from a catalog.
-        params(dict): Python dictionary with request parameters.
+        variable (str): Name of the variable to query.
+        dataset (siphon.catalog.Dataset): A THREDDS dataset from a catalog.
+        params (dict): Python dictionary with request parameters.
+        cum_sum (bool): Sum values accumulatively if True. Defaults to False.
+        offset_dates (dateutil.relativedelta): Offset the time dimension by given relativedelta. Defaults to None.
+        return_json (bool): Jsonify data before returning when True. Otherwise return xr.DataSet. Defaults to True.
 
     Returns:
         dict: JSON-compatible Python Dict with specified variable data.
@@ -23,7 +26,6 @@ def get_data(variable, dataset, params):
     geometry = params['geometry']
     start_time = params.get('start_time', None)
     end_time = params.get('end_time', None)
-    vertical_level = params.get('vertical_level', None)
 
     time_series = extract_time_series_at_location(
         dataset=dataset,
@@ -31,41 +33,20 @@ def get_data(variable, dataset, params):
         variable=variable,
         start_time=start_time,
         end_time=end_time,
-        vertical_level=vertical_level
     )
+
+    if cum_sum:
+        variable = 'cumsum_' + variable
+        time_series[variable] = time_series.sum_tp_mm.cumsum(dim='obs', skipna=True)
+
+    if offset_dates:
+        # TODO: Implment offset_dates capability
+        pass
+
+    if not return_json:
+        return time_series
 
     return jsonify(time_series, variable)
-
-
-def get_cum_precip_data(dataset, params):
-    """
-    Calculate cumulative precipitation over given time.
-
-    Args:
-        dataset(siphon.catalog.Dataset): THREDDS dataset.
-        params(dict): Python dictionary with request parameters.
-
-    Returns:
-        dict: JSON-compatible Python Dict with cummulative precipitation.
-    """
-    geometry = params['geometry']
-    start_time = params.get('start_time', None)
-    end_time = params.get('end_time', None)
-    vertical_level = params.get('vertical_level', None)
-
-    time_series = extract_time_series_at_location(
-        dataset=dataset,
-        geometry=geometry,
-        variable='sum_tp_mm',
-        start_time=start_time,
-        end_time=end_time,
-        vertical_level=vertical_level
-    )
-
-    cum_precip = time_series.sum_tp_mm.cumsum(dim='obs', skipna=True)
-    time_series['cum_pr_mm'] = cum_precip
-
-    return jsonify(time_series, 'cum_pr_mm')
 
 
 def jsonify(dataset, variable):
@@ -85,8 +66,9 @@ def jsonify(dataset, variable):
 
     json_dict = {
         'time_series': {
+            'variable': variable,
             'datetime': df.index.tolist(),
-            variable: df[variable].to_list()
+            'values': df[variable].to_list(),
         }
     }
 
@@ -122,13 +104,13 @@ def overlap_ts(time_series):
     """
     new_date_list = []
     for date in time_series['time_series']['datetime']:
-        new_date = f'{date[:3]}{int(date[3]) + 1}{date[4:]}'  # add one to the year for projected data overlap
+        new_date = f'{int(date[:4]) + 1}{date[4:]}'  # add one to the year for projected data overlap
         new_date_list.append(new_date)
 
     time_series['time_series']['datetime'] = new_date_list
 
 
-def extract_time_series_at_location(dataset, geometry, variable, start_time=None, end_time=None, vertical_level=100000):
+def extract_time_series_at_location(dataset, geometry, variable, start_time=None, end_time=None):
     """
     Extract a time series from a THREDDS dataset at the given location.
 
@@ -138,7 +120,6 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
         variable(str): Name of the variable to query.
         start_time(datetime): Start of time range to query. Defaults to 9 months before end_time.
         end_time(datetime): End of time range to query. Defaults to datetime.utcnow().
-        vertical_level(number): The vertical level to query. Defaults to 100000.
 
     Returns:
         xarray.Dataset: The data from the NCSS query.
@@ -164,9 +145,6 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
 
         # Filter by variable
         query.variables(variable).accept('netcdf')
-
-        # Filter by vertical level
-        query.vertical_level(vertical_level)
 
         # Get the data
         data = ncss.get_data(query)
