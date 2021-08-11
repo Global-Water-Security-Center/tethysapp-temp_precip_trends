@@ -10,7 +10,7 @@ class TempPrecipTrendsApp(TethysAppBase):
 
     name = 'Temperature and Precipitation Trends'
     index = 'temp_precip_trends:home'
-    icon = 'temp_precip_trends/images/icon.gif'
+    icon = 'temp_precip_trends/images/icon.jpg'
     package = 'temp_precip_trends'
     root_url = 'temp-precip-trends'
     color = '#c0392b'
