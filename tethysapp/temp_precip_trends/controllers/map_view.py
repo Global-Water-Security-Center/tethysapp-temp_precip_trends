@@ -1,15 +1,23 @@
+import json
 import logging
+from pathlib import Path
 from urllib.parse import urlparse, urljoin
 
 from django.http import JsonResponse
+from django.contrib.staticfiles.templatetags.staticfiles import static
 from rest_framework.authtoken.models import Token
 
 
 from tethys_sdk.layouts import MapLayout
+from tethys_sdk.workspaces import app_workspace
 
 from tethysapp.temp_precip_trends.app import TempPrecipTrendsApp as app
 
 log = logging.getLogger(f'tethys.{__name__}')
+
+@app_workspace
+def get_app_workspace(request, app_workspace):
+    return app_workspace
 
 
 class GwscMapLayout(MapLayout):
@@ -38,6 +46,7 @@ class GwscMapLayout(MapLayout):
         mean_temp_layer_name = app.get_custom_setting(app.SET_MEAN_TEMP_NAME)
         max_temp_layer_name = app.get_custom_setting(app.SET_MAX_TEMP_NAME)
         tot_precip_layer_name = app.get_custom_setting(app.SET_TOT_PRECIP_NAME)
+        app_workspace = get_app_workspace(request)
 
         # Get Catalog URL
         catalog = self.sds_setting.get_engine(public=True)
@@ -46,7 +55,7 @@ class GwscMapLayout(MapLayout):
         # Get WMS URL
         dataset_wms_url = self.get_dataset_wms_endpoint(catalog)
 
-        # Define layers and add to given MapView
+        # Define data layers
         mean_temp_layer = self.build_wms_layer(
             endpoint=dataset_wms_url,
             layer_name=mean_temp_layer_name,
@@ -83,7 +92,38 @@ class GwscMapLayout(MapLayout):
             visible=False,
             server_type='thredds',
         )
-        map_view.layers.extend([mean_temp_layer, min_temp_layer, max_temp_layer, tot_precip_layer])
+
+        # Load GeoJSON for reference layers
+        us_states_path = Path(app_workspace.path) / 'data' / 'us-states.geojson'
+        with open(us_states_path) as gj:
+            us_states_geojson = json.loads(gj.read())
+
+        countries_path = Path(app_workspace.path) / 'data' / 'countries.geojson'
+        with open(countries_path) as gj:
+            countries_geojson = json.loads(gj.read())
+
+        # Define reference layers
+        us_states_layer = self.build_geojson_layer(
+            geojson=us_states_geojson,
+            layer_name='us-states',
+            layer_title='U.S. States',
+            layer_variable='reference',
+            visible=True,
+        )
+
+        countries_layer = self.build_geojson_layer(
+            geojson=countries_geojson,
+            layer_name='countries',
+            layer_title='Countries',
+            layer_variable='reference',
+            visible=True,
+        )
+
+        # Add layers to map
+        map_view.layers.extend([
+            us_states_layer, countries_layer,
+            mean_temp_layer, min_temp_layer, max_temp_layer, tot_precip_layer
+        ])
 
         # Define the layer groups
         layer_groups = [
@@ -93,6 +133,12 @@ class GwscMapLayout(MapLayout):
                 layer_control='radio',
                 layers=[mean_temp_layer, min_temp_layer, max_temp_layer, tot_precip_layer],
             ),
+            self.build_layer_group(
+                id='reference-group',
+                display_name='Reference',
+                layer_control='checkbox',
+                layers=[us_states_layer, countries_layer],
+            )
         ]
 
         # Layer for testing
@@ -119,6 +165,23 @@ class GwscMapLayout(MapLayout):
             )
 
         return layer_groups
+
+    @classmethod
+    def get_vector_style_map(cls):
+        return {
+            'MultiPolygon': {'ol.style.Style': {
+                'stroke': {'ol.style.Stroke': {
+                    'color': 'black',
+                    'width': 2
+                }}
+            }},
+            'Polygon': {'ol.style.Style': {
+                'stroke': {'ol.style.Stroke': {
+                    'color': 'black',
+                    'width': 2
+                }}
+            }},
+        }
 
     def get_context(self, request, context, *args, **kwargs):
         # Make sure to call super get_context or everything will break!
