@@ -13,7 +13,6 @@ var TPT_MAP_VIEW = (function() {
  	*                      MODULE LEVEL / GLOBAL VARIABLES
  	*************************************************************************/
  	const ERA5_LINK = 'https://confluence.ecmwf.int/display/CKB/ERA5%3A+data+documentation#ERA5:datadocumentation-Introduction',
- 	      PLOT_SUBTITLE = `(Data derived from the <a href="${ERA5_LINK}" target="_blank">ERA5</a>, 1950-2021)`,
  	      SERIES_ENDPOINTS = {
  	          min_temp: '/apps/temp-precip-trends/api/get-min-temp/',
  	          max_temp: '/apps/temp-precip-trends/api/get-max-temp/',
@@ -29,8 +28,9 @@ var TPT_MAP_VIEW = (function() {
  		m_map,				            // MapView object
  		m_plot,                         // Slide Sheet Plotly object/element
  		m_plot_data,                    // Data object of the slide sheet plot
- 		m_plot_layout,                  // Data object of the slide sheet plot
- 		m_plot_title,                   // Title for the plot
+ 		m_plot_layout,                  // Layout object of the slide sheet plot
+ 		m_plot_subtitle,                // Subtitle for the slide sheet plot
+ 		m_plot_title,                   // Title for the slide sheet plot
  		m_valid_time,                   // Current valid time
  		m_valid_time_str,               // Current valid time as US locale date string
  		m_valid_time_request_str;       // Valid time formatted for request: YYYYMMDD
@@ -41,7 +41,7 @@ var TPT_MAP_VIEW = (function() {
  	var init_members;
  	var init_valid_time;
  	var init_click_n_plot, update_lat_lon, update_plot, update_plot_series,
- 	    fetch_time_series;
+ 	    update_plot_title, fetch_time_series;
 
  	/************************************************************************
  	*                    PRIVATE FUNCTION IMPLEMENTATIONS
@@ -51,6 +51,8 @@ var TPT_MAP_VIEW = (function() {
  	    m_map = TETHYS_MAP_VIEW.getMap();
  	    m_plot = MAP_LAYOUT.get_plot();
  	    m_auth_token = tpt_map_attrs.data('auth-token');
+ 	    m_plot_title = `Temp. + Precip. Trends`;
+ 	    m_plot_subtitle = `Data source: <a href="${ERA5_LINK}" target="_blank">ERA5</a>`;
  	};
 
  	init_valid_time = function() {
@@ -83,14 +85,14 @@ var TPT_MAP_VIEW = (function() {
                 title_elem.innerHTML = m_valid_time_str;
 
                 // Set plot title
-                m_plot_title = 'Temp. + Precip. Trends through ' + m_valid_time_str;
+                m_plot_title = `${m_plot_title} through ${m_valid_time_str}`;
+                m_plot_subtitle = `${m_plot_subtitle}, 1950-${year}`;
             });
     };
 
     init_click_n_plot = function() {
         // Set the plot height based on the height of the slide sheet
         const pss_height = $('#plot-slide-sheet').height();
-
 
         m_plot_layout = {
             'height': 0.85 * pss_height,
@@ -114,6 +116,8 @@ var TPT_MAP_VIEW = (function() {
             'legend':{
                 'orientation': 'h',
                 'traceorder': 'grouped',
+                'xanchor': 'center',
+                'x': 0.5,
             },
             'xaxis': {
                'type': 'date',
@@ -136,6 +140,58 @@ var TPT_MAP_VIEW = (function() {
                 'overlaying': 'y',
                 'side': 'right',
             },
+            'annotations': [
+                // Plot title annotation
+                {
+                    'align': 'center',
+                    'xref': 'paper',
+                    'yref': 'paper',
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    'x': 0.5,
+                    'y': 1,
+                    'text': m_plot_title,
+                    'showarrow': false,
+                    'bgcolor': "rgba(255, 255, 255, 0.5)",
+                    'font': {
+                        'size': 18,
+                    },
+                },
+                // Plot subtitle annotation
+                {
+                    'align': 'center',
+                    'xref': 'paper',
+                    'yref': 'paper',
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    'x': 0.5,
+                    'y': 0.96,
+                    'text': m_plot_subtitle,
+                    'showarrow': false,
+                    'bgcolor': "rgba(255, 255, 255, 0.5)",
+                    'font': {
+                        'size': 15,
+                        'color': '#888888',
+                    },
+                },
+                // Lat/lon annotation
+                {
+                    'align': 'center',
+                    'xref': 'paper',
+                    'yref': 'paper',
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    'x': 0.5,
+                    'y': 0.92,
+                    'text': 'Lat: 0 Lon: 0',
+                    'showarrow': false,
+                    'bgcolor': "rgba(255, 255, 255, 0.5)",
+                    'font': {
+                        'size': 15,
+                        'color': '#888888',
+                    },
+                },
+            ]
         };
 
         // Initialize the plot data series
@@ -265,17 +321,7 @@ var TPT_MAP_VIEW = (function() {
             },
         ];
 
-        MAP_LAYOUT.update_plot(m_plot_title, m_plot_data, m_plot_layout);
-
-        // Insert subtitle
-        $('#plot-slide-sheet .slide-sheet-title').after(
-            `<h5 class="slide-sheet-subtitle">${PLOT_SUBTITLE}</h5>`
-        );
-
-        // Insert lat and lon fields
-        $('#plot-slide-sheet .slide-sheet-title').before(
-            '<span class="lat-lon-fields pull-right">Lat: <span id="lat-field">0</span> Lon: <span id="lon-field">0</span></span>'
-        );
+        MAP_LAYOUT.update_plot('', m_plot_data, m_plot_layout);
 
         // Remove point when slide sheet is closed
         $('.slide-sheet-content .close').on('click', function() {
@@ -314,15 +360,22 @@ var TPT_MAP_VIEW = (function() {
     };
 
     update_lat_lon = function(lat, lon) {
-        $('#lat-field').text(lat.toFixed(2));
-        $('#lon-field').text(lon.toFixed(2));
+        // Lat/lon is the 3rd annotation
+        m_plot_layout.annotations[2].text = `Lat: ${lat.toFixed(2)} Lon: ${lon.toFixed(2)}`;
     };
 
     update_plot_series = function(series_index, x, y) {
         m_plot_data[series_index].x = x;
         m_plot_data[series_index].y = y;
         m_plot_data[series_index].visible = true;
-        MAP_LAYOUT.update_plot(m_plot_title, m_plot_data, m_plot_layout);
+        MAP_LAYOUT.update_plot('', m_plot_data, m_plot_layout);
+    };
+
+    update_plot_title = function(title, subtitle) {
+        // Plot title is the 1st annotation
+        m_plot_layout.annotations[0].text = title;
+        // Plot subtitle is the 2nd annotation
+        m_plot_layout.annotations[1].text = subtitle;
     };
 
     update_plot = function(lat, lon) {
@@ -373,6 +426,8 @@ var TPT_MAP_VIEW = (function() {
                 data.time_series.values,
             );
         });
+
+        update_plot_title(m_plot_title, m_plot_subtitle);
     };
 
 	/************************************************************************
