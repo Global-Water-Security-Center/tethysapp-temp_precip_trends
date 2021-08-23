@@ -21,7 +21,10 @@ def get_min_temperature(request):
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
             dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
-            time_series = get_data('min_t2m_c', dataset, params)
+            geometry = params['geometry']
+            start_time = params.get('start_time', None)
+            end_time = params.get('end_time', None)
+            time_series = get_data('min_t2m_c', dataset, geometry, start_time, end_time)
 
             return JsonResponse(time_series)
 
@@ -42,7 +45,10 @@ def get_max_temperature(request):
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
             dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
-            time_series = get_data('max_t2m_c', dataset, params)
+            geometry = params['geometry']
+            start_time = params.get('start_time', None)
+            end_time = params.get('end_time', None)
+            time_series = get_data('max_t2m_c', dataset, geometry, start_time, end_time)
 
             return JsonResponse(time_series)
 
@@ -63,7 +69,10 @@ def get_mean_temperature(request):
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
             dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
-            time_series = get_data('mean_t2m_c', dataset, params)
+            geometry = params['geometry']
+            start_time = params.get('start_time', None)
+            end_time = params.get('end_time', None)
+            time_series = get_data('mean_t2m_c', dataset, geometry, start_time, end_time)
 
             return JsonResponse(time_series)
 
@@ -85,7 +94,10 @@ def get_total_precipitation(request):
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
             dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
-            ds = get_data(variable, dataset, params, return_json=False)
+            geometry = params['geometry']
+            start_time = params.get('start_time', None)
+            end_time = params.get('end_time', None)
+            ds = get_data(variable, dataset, geometry, start_time, end_time, return_json=False)
 
             # TODO: Weekly total precipitation
             # ds = time_series.resample(datetime='7D').sum()
@@ -110,7 +122,10 @@ def get_cumulative_precipitation(request):
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
             dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
             params = request.GET
-            time_series = get_data('sum_tp_mm', dataset, params, cum_sum=True)
+            geometry = params['geometry']
+            start_time = params.get('start_time', None)
+            end_time = params.get('end_time', None)
+            time_series = get_data('sum_tp_mm', dataset, geometry, start_time, end_time, cum_sum=True)
 
             return JsonResponse(time_series)
 
@@ -130,11 +145,11 @@ def get_projected_mean_temperature(request):
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
             dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
-            params = request.GET.copy()  # create a mutable copy
-            params['start_time'] = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
-            params['end_time'] = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-9)
-            # TODO: Implement offset dates
-            time_series = get_data('mean_t2m_c', dataset, params, offset_dates=relativedelta(months=12))
+            params = request.GET
+            geometry = params['geometry']
+            start_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
+            end_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-9)
+            time_series = get_data('mean_t2m_c', dataset, geometry, start_time, end_time)
 
             overlap_ts(time_series)  # add one year to time-series dates for projected data overlap
 
@@ -156,10 +171,11 @@ def get_projected_cumulative_precipitation(request):
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
             dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
-            params = request.GET.copy()  # create a mutable copy
-            params['start_time'] = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
-            params['end_time'] = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-9)
-            time_series = get_data('sum_tp_mm', dataset, params, cum_sum=True)
+            params = request.GET
+            geometry = params['geometry']
+            start_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
+            end_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-9)
+            time_series = get_data('sum_tp_mm', dataset, geometry, start_time, end_time, cum_sum=True)
 
             overlap_ts(time_series)  # add one year to time-series dates for projected data overlap
 

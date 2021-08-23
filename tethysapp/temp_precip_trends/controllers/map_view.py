@@ -4,7 +4,6 @@ from pathlib import Path
 from urllib.parse import urlparse, urljoin
 
 from django.http import JsonResponse
-from django.contrib.staticfiles.templatetags.staticfiles import static
 from rest_framework.authtoken.models import Token
 
 
@@ -15,9 +14,13 @@ from tethysapp.temp_precip_trends.app import TempPrecipTrendsApp as app
 
 log = logging.getLogger(f'tethys.{__name__}')
 
+
 @app_workspace
 def get_app_workspace(request, app_workspace):
-    return app_workspace
+    """
+    The app_workspace decorator doesn't work on class-based views. This is a workaround.
+    """
+    return app_workspace  # pragma:no cover - simple return
 
 
 class GwscMapLayout(MapLayout):

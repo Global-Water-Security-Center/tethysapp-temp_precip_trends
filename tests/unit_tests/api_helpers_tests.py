@@ -11,8 +11,9 @@ class APIHelpersTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.jsonify')
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.extract_time_series_at_location')
     def test_get_data(self, mock_extract_ts, mock_jsonify):
-        mock_params = {'geometry': 'test_geom', 'end_time': 'test_end_time', 'start_time': 'test_start_time',
-                       'vertical_level': 'test_vertical_level'}
+        mock_geometry = 'test_geom'
+        mock_start_time = 'test_start_time'
+        mock_end_time = 'test_end_time'
         mock_variable = 'test_variable'
         mock_dataset = 'test_spatial_ds'
 
@@ -20,14 +21,14 @@ class APIHelpersTests(TestCase):
 
         mock_jsonify.return_value = expected_result
 
-        ret = get_data(mock_variable, mock_dataset, mock_params)
+        ret = get_data(mock_variable, mock_dataset, mock_geometry, mock_start_time, mock_end_time)
 
         mock_extract_ts.assert_called_with(
             dataset=mock_dataset,
-            geometry=mock_params['geometry'],
+            geometry=mock_geometry,
             variable=mock_variable,
-            start_time=mock_params['start_time'],
-            end_time=mock_params['end_time'],
+            start_time=mock_start_time,
+            end_time=mock_end_time,
         )
 
         self.assertEqual(expected_result, ret)
@@ -35,8 +36,9 @@ class APIHelpersTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.jsonify')
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.extract_time_series_at_location')
     def test_get_data_not_json(self, mock_extract_ts, mock_jsonify):
-        mock_params = {'geometry': 'test_geom', 'end_time': 'test_end_time', 'start_time': 'test_start_time',
-                       'vertical_level': 'test_vertical_level'}
+        mock_geometry = 'test_geom'
+        mock_start_time = 'test_start_time'
+        mock_end_time = 'test_end_time'
         mock_variable = 'test_variable'
         mock_dataset = 'test_spatial_ds'
 
@@ -44,14 +46,14 @@ class APIHelpersTests(TestCase):
 
         mock_jsonify.return_value = expected_result
 
-        ret = get_data(mock_variable, mock_dataset, mock_params, return_json=False)
+        ret = get_data(mock_variable, mock_dataset, mock_geometry, mock_start_time, mock_end_time, return_json=False)
 
         mock_extract_ts.assert_called_with(
             dataset=mock_dataset,
-            geometry=mock_params['geometry'],
+            geometry=mock_geometry,
             variable=mock_variable,
-            start_time=mock_params['start_time'],
-            end_time=mock_params['end_time'],
+            start_time=mock_start_time,
+            end_time=mock_end_time,
         )
 
         self.assertNotEqual(expected_result, ret)
@@ -60,8 +62,9 @@ class APIHelpersTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.jsonify')
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.extract_time_series_at_location')
     def test_get_data_cum_sum(self, mock_extract_ts, mock_jsonify):
-        mock_params = {'geometry': 'test_geom', 'end_time': 'test_end_time', 'start_time': 'test_start_time',
-                       'vertical_level': 'test_vertical_level'}
+        mock_geometry = 'test_geom'
+        mock_start_time = 'test_start_time'
+        mock_end_time = 'test_end_time'
         mock_variable = 'sum_tp_mm'
         mock_dataset = 'test_spatial_ds'
         mock_precip_data = np.array([1, 2, 3])
@@ -73,14 +76,14 @@ class APIHelpersTests(TestCase):
         mock_extract_ts.return_value = mock_time_series
         mock_jsonify.return_value = expected_result
 
-        ret = get_data(mock_variable, mock_dataset, mock_params, cum_sum=True)
+        ret = get_data(mock_variable, mock_dataset, mock_geometry, mock_start_time, mock_end_time, cum_sum=True)
 
         mock_extract_ts.assert_called_with(
             dataset=mock_dataset,
-            geometry=mock_params['geometry'],
+            geometry=mock_geometry,
             variable=mock_variable,
-            start_time=mock_params['start_time'],
-            end_time=mock_params['end_time'],
+            start_time=mock_start_time,
+            end_time=mock_end_time,
         )
 
         self.assertTrue(np.array_equal(mock_time_series['cumsum_sum_tp_mm'].data, mock_cum_precip_data))
@@ -159,8 +162,9 @@ class APIHelpersTests(TestCase):
 
     @mock.patch('tethysapp.temp_precip_trends.api_helpers.xr')
     def test_extract_time_series_at_location(self, mock_xr):
-        mock_params = {'geometry': '{"type": "Point",  "coordinates": [40.23, -111.66]}',
-                       'end_time': '20200602', 'start_time': '20200601'}
+        mock_geometry = '{"type": "Point",  "coordinates": [40.23, -111.66]}'
+        mock_start_time = '20200601'
+        mock_end_time = '20200602'
         mock_variable = 'min_t2m_c'
         mock_dataset = mock.MagicMock()
 
@@ -170,17 +174,17 @@ class APIHelpersTests(TestCase):
 
         ret = extract_time_series_at_location(
             dataset=mock_dataset,
-            geometry=mock_params['geometry'],
+            geometry=mock_geometry,
             variable=mock_variable,
-            start_time=mock_params['start_time'],
-            end_time=mock_params['end_time'],
+            start_time=mock_start_time,
+            end_time=mock_end_time,
         )
 
         self.assertEqual(ret, expected_result)
 
     def test_extract_time_series_at_location_exception(self):
-        mock_params = {'geometry': '{"type": "Point",  "coordinates": [40.23, -111.66]}',
-                       'end_time': '20200602', 'vertical_level': 100000}
+        mock_geometry = '{"type": "Point",  "coordinates": [40.23, -111.66]}'
+        mock_end_time = '20200602'
         mock_variable = 'min_t2m_c'
         mock_dataset = mock.MagicMock(
             subset=mock.MagicMock(side_effect=OSError('NetCDF: Unknown file format'))
@@ -192,16 +196,17 @@ class APIHelpersTests(TestCase):
         with self.assertRaises(ValueError) as ret:
             extract_time_series_at_location(
                 dataset=mock_dataset,
-                geometry=mock_params['geometry'],
+                geometry=mock_geometry,
                 variable=mock_variable,
-                end_time=mock_params['end_time'],
+                end_time=mock_end_time,
             )
 
         self.assertEqual(str(ret.exception), expected_result)
 
     def test_extract_time_series_at_location_exception_else(self):
-        mock_params = {'geometry': '{"type": "Point",  "coordinates": [40.23, -111.66]}',
-                       'end_time': '20200602', 'start_time': '20200601'}
+        mock_geometry = '{"type": "Point",  "coordinates": [40.23, -111.66]}'
+        mock_start_time = '20200601'
+        mock_end_time = '20200602'
         mock_variable = 'min_t2m_c'
         mock_dataset = mock.MagicMock(
             subset=mock.MagicMock(side_effect=OSError('Another OSError.'))
@@ -212,10 +217,10 @@ class APIHelpersTests(TestCase):
         with self.assertRaises(OSError) as ret:
             extract_time_series_at_location(
                 dataset=mock_dataset,
-                geometry=mock_params['geometry'],
+                geometry=mock_geometry,
                 variable=mock_variable,
-                start_time=mock_params['start_time'],
-                end_time=mock_params['end_time'],
+                start_time=mock_start_time,
+                end_time=mock_end_time,
             )
 
         self.assertEqual(str(ret.exception), expected_result)

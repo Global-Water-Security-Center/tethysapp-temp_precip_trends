@@ -26,10 +26,11 @@ class ApiTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.get_data')
     def test_get_temps_and_precip(self, mock_get_data, mock_param_check, mock_app, mock_jsonify):
         self.configure_mock_app(mock_app)
-        mock_request_min = self.factory.get('/get-min-temp/')
-        mock_request_mean = self.factory.get('/get-mean-temp/')
-        mock_request_max = self.factory.get('/get-max-temp/')
-        mock_request_tp = self.factory.get('/get-total-precip/')
+        mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
+        mock_request_min = self.factory.get('/get-min-temp/', data=mock_data)
+        mock_request_mean = self.factory.get('/get-mean-temp/', data=mock_data)
+        mock_request_max = self.factory.get('/get-max-temp/', data=mock_data)
+        mock_request_tp = self.factory.get('/get-total-precip/', data=mock_data)
 
         force_authenticate(mock_request_min, user=self.user)
         force_authenticate(mock_request_mean, user=self.user)
@@ -58,10 +59,11 @@ class ApiTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.get_data')
     def test_get_temps_and_precips_exceptions(self, mock_get_data, mock_param_check, mock_app, mock_log):
         self.configure_mock_app(mock_app)
-        mock_request_min = self.factory.get('/get-min-temp/')
-        mock_request_mean = self.factory.get('/get-mean-temp/')
-        mock_request_max = self.factory.get('/get-max-temp/')
-        mock_request_tp = self.factory.get('/get-total-precip/')
+        mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
+        mock_request_min = self.factory.get('/get-min-temp/', data=mock_data)
+        mock_request_mean = self.factory.get('/get-mean-temp/', data=mock_data)
+        mock_request_max = self.factory.get('/get-max-temp/', data=mock_data)
+        mock_request_tp = self.factory.get('/get-total-precip/', data=mock_data)
 
         force_authenticate(mock_request_min, user=self.user)
         force_authenticate(mock_request_mean, user=self.user)
@@ -89,7 +91,8 @@ class ApiTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.get_data')
     def test_get_cum_precip(self, mock_get_cpd, mock_param_check, mock_app):
         self.configure_mock_app(mock_app)
-        mock_request = self.factory.get('/get-cum-precip/')
+        mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
+        mock_request = self.factory.get('/get-cum-precip/', data=mock_data)
 
         force_authenticate(mock_request, user=self.user)
 
@@ -108,7 +111,8 @@ class ApiTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.get_data')
     def test_get_cum_precip_exceptions(self, mock_get_cpd, mock_param_check, mock_app, mock_log):
         self.configure_mock_app(mock_app)
-        mock_request = self.factory.get('/get-cum-precip/')
+        mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
+        mock_request = self.factory.get('/get-cum-precip/', data=mock_data)
 
         force_authenticate(mock_request, user=self.user)
 
@@ -130,7 +134,8 @@ class ApiTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.get_data')
     def test_get_proj_mean_temp(self, mock_get_data, mock_param_check, mock_overlap_ts, _, __, mock_app):
         self.configure_mock_app(mock_app)
-        mock_request = self.factory.get('/get-proj-mean_temp/', {'end_time': 'test'})
+        mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
+        mock_request = self.factory.get('/get-proj-mean_temp/', mock_data)
 
         force_authenticate(mock_request, user=self.user)
 
@@ -154,7 +159,8 @@ class ApiTests(TestCase):
     def test_get_proj_mean_temp_exceptions(self, mock_get_data, mock_param_check, mock_overlap_ts, _, __, mock_app,
                                            mock_log):
         self.configure_mock_app(mock_app)
-        mock_request = self.factory.get('/get-proj-mean_temp/', {'end_time': 'test'})
+        mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
+        mock_request = self.factory.get('/get-proj-mean_temp/', data=mock_data)
 
         force_authenticate(mock_request, user=self.user)
 
@@ -177,7 +183,8 @@ class ApiTests(TestCase):
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.get_data')
     def test_get_proj_cum_precip(self, mock_get_cpd, mock_param_check, mock_overlap_ts, _, __, mock_app):
         self.configure_mock_app(mock_app)
-        mock_request = self.factory.get('/get-proj-cum-precip/', {'end_time': 'test'})
+        mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
+        mock_request = self.factory.get('/get-proj-cum-precip/', data=mock_data)
 
         force_authenticate(mock_request, user=self.user)
 
@@ -201,7 +208,8 @@ class ApiTests(TestCase):
     def test_get_proj_cum_precip_exceptions(self, mock_get_cpd, mock_param_check, mock_overlap_ts, _, __, mock_log,
                                             mock_app):
         self.configure_mock_app(mock_app)
-        mock_request = self.factory.get('/get-proj-cum-precip/', {'end_time': 'test'})
+        mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
+        mock_request = self.factory.get('/get-proj-cum-precip/', data=mock_data)
 
         force_authenticate(mock_request, user=self.user)
 

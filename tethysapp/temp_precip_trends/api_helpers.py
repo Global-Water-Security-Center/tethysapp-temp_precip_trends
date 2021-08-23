@@ -7,26 +7,26 @@ import pandas as pd
 import xarray as xr
 
 
-def get_data(variable, dataset, params, cum_sum=False, offset_dates=None, return_json=True):
+def get_data(variable, dataset, geometry, start_time=None, end_time=None, cum_sum=False,
+             return_json=True, offset_dates=None):
     """
     Get available variable data for specified location and time range. Available variables are: min_t2m_c, mean_t2m_c,
-    max_t2m_c, and sum_tp_mm.
+        max_t2m_c, and sum_tp_mm.
 
     Args:
         variable (str): Name of the variable to query.
         dataset (siphon.catalog.Dataset): A THREDDS dataset from a catalog.
-        params (dict): Python dictionary with request parameters.
+        geometry (str): GeoJSON string of a Point location at which to retrieve the data.
+        start_time (str): Start time of the date range of data to retrieve (e.g.: 'YYYYMMDD').
+        end_time (str): End time of the date range of data to retrieve (e.g.: 'YYYYMMDD').
         cum_sum (bool): Sum values accumulatively if True. Defaults to False.
-        offset_dates (dateutil.relativedelta): Offset the time dimension by given relativedelta. Defaults to None.
         return_json (bool): Jsonify data before returning when True. Otherwise return xr.DataSet. Defaults to True.
+        offset_dates (dateutil.relativedelta): Offset the time dimension by given relativedelta. Defaults to None.
+            NOT IMPLEMENTED YET.
 
     Returns:
         dict: JSON-compatible Python Dict with specified variable data.
     """
-    geometry = params['geometry']
-    start_time = params.get('start_time', None)
-    end_time = params.get('end_time', None)
-
     time_series = extract_time_series_at_location(
         dataset=dataset,
         geometry=geometry,
