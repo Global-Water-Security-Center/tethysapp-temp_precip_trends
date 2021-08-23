@@ -1,29 +1,45 @@
-import datetime as dt
+import json
 import logging
+from pathlib import Path
 from urllib.parse import urlparse, urljoin
 
 from django.http import JsonResponse
+from rest_framework.authtoken.models import Token
+
 
 from tethys_sdk.layouts import MapLayout
+from tethys_sdk.workspaces import app_workspace
 
 from tethysapp.temp_precip_trends.app import TempPrecipTrendsApp as app
 
 log = logging.getLogger(f'tethys.{__name__}')
 
 
+@app_workspace
+def get_app_workspace(request, app_workspace):
+    """
+    The app_workspace decorator doesn't work on class-based views. This is a workaround.
+    """
+    return app_workspace  # pragma:no cover - simple return
+
+
 class GwscMapLayout(MapLayout):
     app = app
     template_name = 'temp_precip_trends/map_view.html'
     base_template = 'temp_precip_trends/base.html'
+    sds_setting_name = app.SET_THREDDS_SDS_NAME
     map_title = ''  # Map title set dynamically to valid time
     map_subtitle = ''
-    sds_setting_name = app.SET_THREDDS_SDS_NAME
     default_center = [-98.583, 39.833]  # USA Center
     initial_map_extent = [-65.69, 23.81, -129.17, 49.38]  # USA EPSG:2374
     default_zoom = 5
     max_zoom = 16
     min_zoom = 2
+    plot_slide_sheet = True
     show_legends = True
+    show_map_clicks = True
+    show_map_click_popup = False
+    show_properties_popup = False
 
     def compose_layers(self, request, map_view, *args, **kwargs):
         """
@@ -33,6 +49,7 @@ class GwscMapLayout(MapLayout):
         mean_temp_layer_name = app.get_custom_setting(app.SET_MEAN_TEMP_NAME)
         max_temp_layer_name = app.get_custom_setting(app.SET_MAX_TEMP_NAME)
         tot_precip_layer_name = app.get_custom_setting(app.SET_TOT_PRECIP_NAME)
+        app_workspace = get_app_workspace(request)
 
         # Get Catalog URL
         catalog = self.sds_setting.get_engine(public=True)
@@ -41,7 +58,7 @@ class GwscMapLayout(MapLayout):
         # Get WMS URL
         dataset_wms_url = self.get_dataset_wms_endpoint(catalog)
 
-        # Define layers and add to given MapView
+        # Define data layers
         mean_temp_layer = self.build_wms_layer(
             endpoint=dataset_wms_url,
             layer_name=mean_temp_layer_name,
@@ -78,7 +95,38 @@ class GwscMapLayout(MapLayout):
             visible=False,
             server_type='thredds',
         )
-        map_view.layers.extend([mean_temp_layer, min_temp_layer, max_temp_layer, tot_precip_layer])
+
+        # Load GeoJSON for reference layers
+        us_states_path = Path(app_workspace.path) / 'data' / 'us-states.geojson'
+        with open(us_states_path) as gj:
+            us_states_geojson = json.loads(gj.read())
+
+        countries_path = Path(app_workspace.path) / 'data' / 'countries.geojson'
+        with open(countries_path) as gj:
+            countries_geojson = json.loads(gj.read())
+
+        # Define reference layers
+        us_states_layer = self.build_geojson_layer(
+            geojson=us_states_geojson,
+            layer_name='us-states',
+            layer_title='U.S. States',
+            layer_variable='reference',
+            visible=True,
+        )
+
+        countries_layer = self.build_geojson_layer(
+            geojson=countries_geojson,
+            layer_name='countries',
+            layer_title='Countries',
+            layer_variable='reference',
+            visible=True,
+        )
+
+        # Add layers to map
+        map_view.layers.extend([
+            us_states_layer, countries_layer,
+            mean_temp_layer, min_temp_layer, max_temp_layer, tot_precip_layer
+        ])
 
         # Define the layer groups
         layer_groups = [
@@ -88,9 +136,66 @@ class GwscMapLayout(MapLayout):
                 layer_control='radio',
                 layers=[mean_temp_layer, min_temp_layer, max_temp_layer, tot_precip_layer],
             ),
+            self.build_layer_group(
+                id='reference-group',
+                display_name='Reference',
+                layer_control='checkbox',
+                layers=[us_states_layer, countries_layer],
+            )
         ]
 
+        # Layer for testing
+        if False:
+            self.geoserver_workspace = 'topp'
+            usa_states = self.build_wms_layer(
+                endpoint='http://192.168.1.26:8181/geoserver/wms',
+                layer_name='topp:states',
+                layer_title="USA States",
+                layer_variable='population',
+                geometry_attribute='the_geom',
+                visible=True,
+                selectable=True,
+            )
+            map_view.layers.insert(0, usa_states)
+            layer_groups.insert(
+                0,
+                self.build_layer_group(
+                    id='test-layer-group',
+                    display_name='USA States',
+                    layer_control='checkbox',
+                    layers=[usa_states],
+                ),
+            )
+
         return layer_groups
+
+    @classmethod
+    def get_vector_style_map(cls):
+        return {
+            'MultiPolygon': {'ol.style.Style': {
+                'stroke': {'ol.style.Stroke': {
+                    'color': 'black',
+                    'width': 2
+                }}
+            }},
+            'Polygon': {'ol.style.Style': {
+                'stroke': {'ol.style.Stroke': {
+                    'color': 'black',
+                    'width': 2
+                }}
+            }},
+        }
+
+    def get_context(self, request, context, *args, **kwargs):
+        # Make sure to call super get_context or everything will break!
+        super().get_context(request, context, *args, **kwargs)
+
+        # Get auth token for user and pass to context
+        auth_token, _ = Token.objects.get_or_create(user=request.user)
+        context.update({
+            'auth_token': auth_token.key
+        })
+        return context
 
     @staticmethod
     def get_dataset_wms_endpoint(catalog):
@@ -128,7 +233,4 @@ class GwscMapLayout(MapLayout):
         log.debug(f'Dataset Time Span: {ncss.metadata.time_span}')
         last_time_step = ncss.metadata.time_span.get('end')
         log.debug(f'End of Time Span: {last_time_step}')
-        last_time_step_str = dt.datetime \
-            .strptime(last_time_step, '%Y-%m-%dT%H:%M:%SZ') \
-            .strftime('%-d %B %Y')
-        return JsonResponse({'valid_time': last_time_step_str})
+        return JsonResponse({'valid_time': last_time_step})

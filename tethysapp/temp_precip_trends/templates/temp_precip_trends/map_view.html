@@ -10,3 +10,9 @@
   {{ block.super }}
   <script src="{% static 'temp_precip_trends/js/tpt_map_view.js' %}" type="text/javascript"></script>
 {% endblock %}
+
+{% block app_content %}
+  {{ block.super }}
+  <div id="tpt-map-attributes"
+       data-auth-token="{{ auth_token }}"></div>
+{% endblock %}

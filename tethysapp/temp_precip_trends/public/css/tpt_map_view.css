@@ -1,3 +1,23 @@
+/* Set hight of loading gif in title */
 #nav-title .title img {
   height: 34px;
+}
+
+/* Plot Slide Sheet */
+#app-content-wrapper #app-content .slide-sheet,
+#app-content-wrapper.show-nav #app-content .slide-sheet {
+  height: 90vh;
+}
+
+#plot-slide-sheet .slide-sheet-subtitle {
+  margin-left: 25px;
+  color: #888;
+  font-size: 16px;
+}
+
+#plot-slide-sheet .lat-lon-fields {
+  display: inline-block;
+  margin: 10px 0;
+  font-size: 14px;
+  font-weight: bold;
 }

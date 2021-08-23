@@ -1,5 +1,6 @@
 from tethys_sdk.base import TethysAppBase, url_map_maker
 from tethys_sdk.app_settings import CustomSetting, SpatialDatasetServiceSetting
+from django.contrib.auth.decorators import login_required
 
 
 class TempPrecipTrendsApp(TethysAppBase):
@@ -9,7 +10,7 @@ class TempPrecipTrendsApp(TethysAppBase):
 
     name = 'Temperature and Precipitation Trends'
     index = 'temp_precip_trends:home'
-    icon = 'temp_precip_trends/images/icon.gif'
+    icon = 'temp_precip_trends/images/icon.jpg'
     package = 'temp_precip_trends'
     root_url = 'temp-precip-trends'
     color = '#c0392b'
@@ -38,7 +39,7 @@ class TempPrecipTrendsApp(TethysAppBase):
             UrlMap(
                 name='home',
                 url='temp-precip-trends',
-                controller=GwscMapLayout.as_controller(app=TempPrecipTrendsApp)
+                controller=login_required(GwscMapLayout.as_controller())
             ),
             UrlMap(
                 name='min_temp',
@@ -67,7 +68,7 @@ class TempPrecipTrendsApp(TethysAppBase):
             ),
             UrlMap(
                 name='proj_mean_temp',
-                url='api/get-proj-mean_temp',
+                url='api/get-proj-mean-temp',
                 controller='temp_precip_trends.controllers.api.get_projected_mean_temperature'
             ),
             UrlMap(
