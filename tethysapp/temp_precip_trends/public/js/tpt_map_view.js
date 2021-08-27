@@ -21,6 +21,9 @@ var TPT_MAP_VIEW = (function() {
  	          cum_prcp: '/apps/temp-precip-trends/api/get-cum-precip/',
  	          prj_mean_temp: '/apps/temp-precip-trends/api/get-proj-mean-temp/',
  	          prj_cum_prcp: '/apps/temp-precip-trends/api/get-proj-cum-precip/',
+ 	          normal_temp: '/apps/temp-precip-trends/api/get-normal-data/normal-temp/',
+ 	          normal_prcp: '/apps/temp-precip-trends/api/get-normal-data/normal-prcp/',
+ 	          normal_cumm_prcp: '/apps/temp-precip-trends/api/get-normal-data/normal-cumm-prcp/',
  	      };
 
  	var public_interface,				// Object returned by the module
@@ -319,6 +322,59 @@ var TPT_MAP_VIEW = (function() {
                     'width': 1.5,
                 },
             },
+            // normal_temp
+            {
+                'x': [],
+                'y': [],
+                'legendgroup': 'temp',
+                'hovertemplate': "Normal Temp: %{y:.1f} \u00B0C",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 40,
+                'name': "Normal Temperature",
+                'type': 'scatter',
+                'line': {
+                    'color': '#000000',
+                    'width': 1,
+                },
+            },
+            // normal_cumm_prcp
+            {
+                'x': [],
+                'y': [],
+                'legendgroup': 'prcp',
+                'hovertemplate': "Normal Cum. Precip.: %{y:.1f} mm",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 80,
+                'name': "Normal Cumulative Precip.",
+                'type': 'scatter',
+                'yaxis': 'y2',
+                'line': {
+                    'color': '#01ff01',
+                    'dash': 'dot',
+                    'width': 1.5,
+                },
+            },
+            // normal_tot_prcp
+            {
+                'x': [],
+                'y': [],
+                'legendgroup': 'prcpbar',
+                'hovertemplate': "Normal Daily. Precip.: %{y:.1f} mm",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 55,
+                'name': 'Normal Daily Precip.',
+                'type': 'bar',
+                'yaxis': 'y2',
+                'marker': {
+                    'color': '#0c0cfc',
+                },
+            },
         ];
 
         MAP_LAYOUT.update_plot('', m_plot_data, m_plot_layout);
@@ -422,6 +478,24 @@ var TPT_MAP_VIEW = (function() {
         });
         fetch_time_series('prj_cum_prcp', lat, lon).then((data) => {
             update_plot_series(6,  // prj_cum_prcp
+                data.time_series.datetime,
+                data.time_series.values,
+            );
+        });
+        fetch_time_series('normal_temp', lat, lon).then((data) => {
+            update_plot_series(7,  // normal_temp
+                data.time_series.datetime,
+                data.time_series.values,
+            );
+        });
+        fetch_time_series('normal_cumm_prcp', lat, lon).then((data) => {
+            update_plot_series(8,  // normal_cumm_prcp
+                data.time_series.datetime,
+                data.time_series.values,
+            );
+        });
+        fetch_time_series('normal_prcp', lat, lon).then((data) => {
+            update_plot_series(9,  // normal_prcp
                 data.time_series.datetime,
                 data.time_series.values,
             );

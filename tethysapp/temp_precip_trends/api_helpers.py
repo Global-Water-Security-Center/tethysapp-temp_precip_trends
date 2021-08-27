@@ -36,8 +36,9 @@ def get_data(variable, dataset, geometry, start_time=None, end_time=None, cum_su
     )
 
     if cum_sum:
+        original_variable = variable
         variable = 'cumsum_' + variable
-        time_series[variable] = time_series.sum_tp_mm.cumsum(dim='obs', skipna=True)
+        time_series[variable] = time_series[original_variable].cumsum(dim='obs', skipna=True)
 
     if offset_dates:
         # TODO: Implment offset_dates capability
