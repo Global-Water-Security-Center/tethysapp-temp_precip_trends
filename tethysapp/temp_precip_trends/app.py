@@ -20,13 +20,16 @@ class TempPrecipTrendsApp(TethysAppBase):
     feedback_emails = []
 
     SET_THREDDS_SDS_NAME = 'primary_thredds'
-    SET_THREDDS_DATASET_NAME = 'primary_dataset'
+    SET_THREDDS_PRIMARY_DATASET_NAME = 'primary_dataset'
+    SET_THREDDS_NORMAL_DATASET_NAME = 'normal_dataset'
     SET_THREDDS_WMS_BASE = 'thredds_wms_base'
     SET_DATASET_URL_PATH = 'dataset_url_path'
     SET_MIN_TEMP_NAME = 'min_temp_name'
     SET_MEAN_TEMP_NAME = 'mean_temp_name'
     SET_MAX_TEMP_NAME = 'max_temp_name'
     SET_TOT_PRECIP_NAME = 'tot_precip_name'
+    SET_NORMAL_TEMP_NAME = 'normal_temp_name'
+    SET_NORMAL_PRECIP_NAME = 'normal_precip_name'
 
     def url_maps(self):
         """
@@ -91,11 +94,18 @@ class TempPrecipTrendsApp(TethysAppBase):
         """
         return (
             CustomSetting(
-                name=self.SET_THREDDS_DATASET_NAME,
+                name=self.SET_THREDDS_PRIMARY_DATASET_NAME,
                 type=CustomSetting.TYPE_STRING,
-                description='Default THREDDS dataset.',
-                required=True,
+                description='Name of primary THREDDS dataset.',
                 default='ERA5 Daily Precipitation and Temperatures',
+                required=True,
+            ),
+            CustomSetting(
+                name=self.SET_THREDDS_NORMAL_DATASET_NAME,
+                type=CustomSetting.TYPE_STRING,
+                description='Name of normal THREDDS dataset.',
+                default='ERA5 Normal Precipitation and Temperature (1950-2021)',
+                required=True,
             ),
             CustomSetting(
                 name=self.SET_THREDDS_WMS_BASE,
@@ -115,30 +125,44 @@ class TempPrecipTrendsApp(TethysAppBase):
             ),
             CustomSetting(
                 name=self.SET_MIN_TEMP_NAME,
-                description='Name of the Minimum Temperature WMS layer.',
+                description='Name of the Minimum Temperature WMS layer/THREDDS dataset.',
                 type=CustomSetting.TYPE_STRING,
                 default='min_t2m_c',
                 required=True,
             ),
             CustomSetting(
                 name=self.SET_MEAN_TEMP_NAME,
-                description='Name of the Mean Temperature WMS layer.',
+                description='Name of the Mean Temperature WMS layer/THREDDS dataset.',
                 type=CustomSetting.TYPE_STRING,
                 default='mean_t2m_c',
                 required=True,
             ),
             CustomSetting(
                 name=self.SET_MAX_TEMP_NAME,
-                description='Name of the Maximum Temperature WMS layer.',
+                description='Name of the Maximum Temperature WMS layer/THREDDS dataset.',
                 type=CustomSetting.TYPE_STRING,
                 default='max_t2m_c',
                 required=True,
             ),
             CustomSetting(
                 name=self.SET_TOT_PRECIP_NAME,
-                description='Name of the Total Precipitation WMS layer.',
+                description='Name of the Total Precipitation WMS layer/THREDDS dataset.',
                 type=CustomSetting.TYPE_STRING,
                 default='sum_tp_mm',
+                required=True,
+            ),
+            CustomSetting(
+                name=self.SET_NORMAL_TEMP_NAME,
+                description='Name of the Normal Temperature WMS layer/THREDDS dataset.',
+                type=CustomSetting.TYPE_STRING,
+                default='normal_mean_t2m_c',
+                required=True,
+            ),
+            CustomSetting(
+                name=self.SET_NORMAL_PRECIP_NAME,
+                description='Name of the Normal Precipitation WMS layer/THREDDS dataset.',
+                type=CustomSetting.TYPE_STRING,
+                default='normal_sum_tp_mm',
                 required=True,
             ),
         )

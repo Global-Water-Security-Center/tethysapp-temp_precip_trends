@@ -21,7 +21,7 @@ def get_min_temperature(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_PRIMARY_DATASET_NAME)]
             params = request.GET
             geometry = params['geometry']
             start_time = params.get('start_time', None)
@@ -45,7 +45,7 @@ def get_max_temperature(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_PRIMARY_DATASET_NAME)]
             params = request.GET
             geometry = params['geometry']
             start_time = params.get('start_time', None)
@@ -69,7 +69,7 @@ def get_mean_temperature(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_PRIMARY_DATASET_NAME)]
             params = request.GET
             geometry = params['geometry']
             start_time = params.get('start_time', None)
@@ -94,7 +94,7 @@ def get_total_precipitation(request):
         try:
             variable = 'sum_tp_mm'
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_PRIMARY_DATASET_NAME)]
             params = request.GET
             geometry = params['geometry']
             start_time = params.get('start_time', None)
@@ -122,7 +122,7 @@ def get_cumulative_precipitation(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_PRIMARY_DATASET_NAME)]
             params = request.GET
             geometry = params['geometry']
             start_time = params.get('start_time', None)
@@ -146,7 +146,7 @@ def get_projected_mean_temperature(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_PRIMARY_DATASET_NAME)]
             params = request.GET
             geometry = params['geometry']
             start_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
@@ -172,7 +172,7 @@ def get_projected_cumulative_precipitation(request):
     if 'success' in check_request.keys():
         try:
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
-            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_DATASET_NAME)]
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_PRIMARY_DATASET_NAME)]
             params = request.GET
             geometry = params['geometry']
             start_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
@@ -208,12 +208,11 @@ def get_normal_data(request, variable):
 
             # Get data at location
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
+            dataset = catalog.datasets[app.get_custom_setting(app.SET_THREDDS_NORMAL_DATASET_NAME)]
             if 'temp' in variable:
-                dataset = catalog.datasets['ERA5 Normal Temperature (1950-2021)']  # TODO: Add App Setting for this
-                query_variable = 'mean_t2m_c_doy_mean'
+                query_variable = app.get_custom_setting(app.SET_NORMAL_TEMP_NAME)
             else:
-                dataset = catalog.datasets['ERA5 Normal Precipitation (1950-2021)']  # TODO: Add App Setting for this
-                query_variable = 'sum_tp_mm_doy_mean'
+                query_variable = app.get_custom_setting(app.SET_NORMAL_PRECIP_NAME)
 
             # Note: Dates for normal dataset are arbitrarily set for the year 2000
             ds = get_data(
