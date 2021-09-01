@@ -44,7 +44,7 @@ var TPT_MAP_VIEW = (function() {
  	var init_members;
  	var init_valid_time;
  	var init_click_n_plot, update_lat_lon, update_plot, update_plot_series,
- 	    update_plot_title, fetch_time_series;
+ 	    update_plot_title, reset_plot, fetch_time_series;
 
  	/************************************************************************
  	*                    PRIVATE FUNCTION IMPLEMENTATIONS
@@ -94,6 +94,43 @@ var TPT_MAP_VIEW = (function() {
     };
 
     init_click_n_plot = function() {
+        // Remove point when slide sheet is closed
+        $('.slide-sheet-content .close').on('click', function() {
+            TETHYS_MAP_VIEW.clearClickedPoint();
+        });
+
+        // Bind to map click event
+        TETHYS_MAP_VIEW.mapClicked(function(coordinate, event) {
+            let lon_lat = ol.proj.toLonLat(coordinate);
+            let lat = lon_lat[1];
+            let lon = lon_lat[0];
+            update_plot(lat, lon);
+            MAP_LAYOUT.show_plot();
+        });
+    };
+
+    fetch_time_series = async function(series, lat, lon) {
+        // Min temperature
+        let geometry = {
+            type: 'Point',
+            coordinates: [lon, lat]
+        };
+        let params = new URLSearchParams({
+            geometry: JSON.stringify(geometry),
+            end_time: m_valid_time_request_str,
+        });
+        let url = `${SERIES_ENDPOINTS[series]}?${params.toString()}`;
+        console.log(url);
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Token ${m_auth_token}`
+            },
+        });
+        return response.json();
+    };
+
+    reset_plot = function() {
         // Set the plot height based on the height of the slide sheet
         const pss_height = $('#plot-slide-sheet').height();
 
@@ -378,41 +415,6 @@ var TPT_MAP_VIEW = (function() {
         ];
 
         MAP_LAYOUT.update_plot('', m_plot_data, m_plot_layout);
-
-        // Remove point when slide sheet is closed
-        $('.slide-sheet-content .close').on('click', function() {
-            TETHYS_MAP_VIEW.clearClickedPoint();
-        });
-
-        // Bind to map click event
-        TETHYS_MAP_VIEW.mapClicked(function(coordinate, event) {
-            let lon_lat = ol.proj.toLonLat(coordinate);
-            let lat = lon_lat[1];
-            let lon = lon_lat[0];
-            update_plot(lat, lon);
-            MAP_LAYOUT.show_plot();
-        });
-    };
-
-    fetch_time_series = async function(series, lat, lon) {
-        // Min temperature
-        let geometry = {
-            type: 'Point',
-            coordinates: [lon, lat]
-        };
-        let params = new URLSearchParams({
-            geometry: JSON.stringify(geometry),
-            end_time: m_valid_time_request_str,
-        });
-        let url = `${SERIES_ENDPOINTS[series]}?${params.toString()}`;
-        console.log(url);
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Token ${m_auth_token}`
-            },
-        });
-        return response.json();
     };
 
     update_lat_lon = function(lat, lon) {
@@ -435,6 +437,8 @@ var TPT_MAP_VIEW = (function() {
     };
 
     update_plot = function(lat, lon) {
+        reset_plot();
+
         // Update the latitude and longitude coordinates shown on the plot
         update_lat_lon(lat, lon);
 
