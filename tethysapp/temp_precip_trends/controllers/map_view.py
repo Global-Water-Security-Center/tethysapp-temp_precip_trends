@@ -16,11 +16,11 @@ log = logging.getLogger(f'tethys.{__name__}')
 
 
 @app_workspace
-def get_app_workspace(request, app_workspace):
+def get_app_workspace(request, app_workspace):  # pragma: no cover - simple return
     """
     The app_workspace decorator doesn't work on class-based views. This is a workaround.
     """
-    return app_workspace  # pragma:no cover - simple return
+    return app_workspace
 
 
 class GwscMapLayout(MapLayout):

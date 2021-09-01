@@ -120,7 +120,6 @@ var TPT_MAP_VIEW = (function() {
             end_time: m_valid_time_request_str,
         });
         let url = `${SERIES_ENDPOINTS[series]}?${params.toString()}`;
-        console.log(url);
         const response = await fetch(url, {
             method: 'GET',
             headers: {

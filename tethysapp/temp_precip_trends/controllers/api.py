@@ -198,7 +198,7 @@ def get_normal_data(request, variable):
         try:
             params = request.GET
             geometry = params['geometry']
-            end_time = params.get('end_time')  # TODO: rename this to current date
+            end_time = params.get('end_time')
             variable = variable.replace('-', '_')
 
             # Compute times: series should start 9 months before given datetime

@@ -119,8 +119,8 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
         dataset(siphon.catalog.Dataset): a THREDDS dataset from a catalog.
         geometry(geojson): A geojson object representing the location.
         variable(str): Name of the variable to query.
-        start_time(datetime): Start of time range to query. Defaults to 9 months before end_time.
-        end_time(datetime): End of time range to query. Defaults to datetime.utcnow().
+        start_time(str): Start of time range to query. Defaults to 9 months before end_time.
+        end_time(str): End of time range to query. Defaults to datetime.utcnow().
         day_of_year(int): Day of a 366 day year.
 
     Returns:

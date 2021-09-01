@@ -167,6 +167,7 @@ class APIHelpersTests(TestCase):
         mock_end_time = '20200602'
         mock_variable = 'min_t2m_c'
         mock_dataset = mock.MagicMock()
+        mock_query = mock_dataset.subset().query()
 
         expected_result = {'test': 'test data'}
         mock_xr.open_dataset.return_value = expected_result
@@ -180,9 +181,55 @@ class APIHelpersTests(TestCase):
             end_time=mock_end_time,
         )
 
+        mock_query.time_range.assert_called()
+
         self.assertEqual(ret, expected_result)
 
-    def test_extract_time_series_at_location_exception(self):
+    @mock.patch('tethysapp.temp_precip_trends.api_helpers.xr')
+    def test_extract_time_series_at_location_no_start_time(self, mock_xr):
+        mock_geometry = '{"type": "Point",  "coordinates": [40.23, -111.66]}'
+        mock_end_time = '20200602'
+        mock_variable = 'min_t2m_c'
+        mock_dataset = mock.MagicMock()
+        mock_query = mock_dataset.subset().query()
+
+        expected_result = {'test': 'test data'}
+        mock_xr.open_dataset.return_value = expected_result
+        mock_xr.backends.NetCDF4DataStore = mock.MagicMock()
+
+        ret = extract_time_series_at_location(
+            dataset=mock_dataset,
+            geometry=mock_geometry,
+            variable=mock_variable,
+            end_time=mock_end_time,
+        )
+
+        mock_query.time_range.assert_called()
+
+        self.assertEqual(ret, expected_result)
+
+    @mock.patch('tethysapp.temp_precip_trends.api_helpers.xr')
+    def test_extract_time_series_at_location_no_dates(self, mock_xr):
+        mock_geometry = '{"type": "Point",  "coordinates": [40.23, -111.66]}'
+        mock_variable = 'min_t2m_c'
+        mock_dataset = mock.MagicMock()
+        mock_query = mock_dataset.subset().query()
+
+        expected_result = {'test': 'test data'}
+        mock_xr.open_dataset.return_value = expected_result
+        mock_xr.backends.NetCDF4DataStore = mock.MagicMock()
+
+        ret = extract_time_series_at_location(
+            dataset=mock_dataset,
+            geometry=mock_geometry,
+            variable=mock_variable,
+        )
+
+        mock_query.time_range.assert_not_called()
+
+        self.assertEqual(ret, expected_result)
+
+    def test_extract_time_series_at_location_netcdf_file_format_exception(self):
         mock_geometry = '{"type": "Point",  "coordinates": [40.23, -111.66]}'
         mock_end_time = '20200602'
         mock_variable = 'min_t2m_c'
@@ -203,7 +250,7 @@ class APIHelpersTests(TestCase):
 
         self.assertEqual(str(ret.exception), expected_result)
 
-    def test_extract_time_series_at_location_exception_else(self):
+    def test_extract_time_series_at_location_other_exception(self):
         mock_geometry = '{"type": "Point",  "coordinates": [40.23, -111.66]}'
         mock_start_time = '20200601'
         mock_end_time = '20200602'
