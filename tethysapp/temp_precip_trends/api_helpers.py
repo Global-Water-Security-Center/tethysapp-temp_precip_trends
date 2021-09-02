@@ -36,8 +36,9 @@ def get_data(variable, dataset, geometry, start_time=None, end_time=None, cum_su
     )
 
     if cum_sum:
+        original_variable = variable
         variable = 'cumsum_' + variable
-        time_series[variable] = time_series.sum_tp_mm.cumsum(dim='obs', skipna=True)
+        time_series[variable] = time_series[original_variable].cumsum(dim='obs', skipna=True)
 
     if offset_dates:
         # TODO: Implment offset_dates capability
@@ -118,22 +119,15 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
         dataset(siphon.catalog.Dataset): a THREDDS dataset from a catalog.
         geometry(geojson): A geojson object representing the location.
         variable(str): Name of the variable to query.
-        start_time(datetime): Start of time range to query. Defaults to 9 months before end_time.
-        end_time(datetime): End of time range to query. Defaults to datetime.utcnow().
+        start_time(str): Start of time range to query. Defaults to 9 months before end_time.
+        end_time(str): End of time range to query. Defaults to datetime.utcnow().
+        day_of_year(int): Day of a 366 day year.
 
     Returns:
         xarray.Dataset: The data from the NCSS query.
     """
     try:
         # Filter by time
-        if isinstance(end_time, str):
-            end_time = datetime.strptime(end_time, '%Y%m%d')
-
-        if start_time is None:
-            start_time = end_time + relativedelta(months=-9)
-        elif isinstance(start_time, str):
-            start_time = datetime.strptime(start_time, '%Y%m%d')
-
         ncss = dataset.subset()
         query = ncss.query()
 
@@ -141,7 +135,17 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
         coordinates = json.loads(geometry)['coordinates']
         query.lonlat_point(coordinates[0], coordinates[1])
 
-        query.time_range(start_time, end_time)
+        # Filter by time
+        if isinstance(end_time, str):
+            end_time = datetime.strptime(end_time, '%Y%m%d')
+
+        if start_time is None and isinstance(end_time, datetime):
+            start_time = end_time + relativedelta(months=-9)
+        elif isinstance(start_time, str):
+            start_time = datetime.strptime(start_time, '%Y%m%d')
+
+        if start_time or end_time:
+            query.time_range(start_time, end_time)
 
         # Filter by variable
         query.variables(variable).accept('netcdf')

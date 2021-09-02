@@ -21,6 +21,9 @@ var TPT_MAP_VIEW = (function() {
  	          cum_prcp: '/apps/temp-precip-trends/api/get-cum-precip/',
  	          prj_mean_temp: '/apps/temp-precip-trends/api/get-proj-mean-temp/',
  	          prj_cum_prcp: '/apps/temp-precip-trends/api/get-proj-cum-precip/',
+ 	          normal_temp: '/apps/temp-precip-trends/api/get-normal-data/normal-temp/',
+ 	          normal_prcp: '/apps/temp-precip-trends/api/get-normal-data/normal-prcp/',
+ 	          normal_cumm_prcp: '/apps/temp-precip-trends/api/get-normal-data/normal-cumm-prcp/',
  	      };
 
  	var public_interface,				// Object returned by the module
@@ -41,7 +44,7 @@ var TPT_MAP_VIEW = (function() {
  	var init_members;
  	var init_valid_time;
  	var init_click_n_plot, update_lat_lon, update_plot, update_plot_series,
- 	    update_plot_title, fetch_time_series;
+ 	    update_plot_title, reset_plot, fetch_time_series;
 
  	/************************************************************************
  	*                    PRIVATE FUNCTION IMPLEMENTATIONS
@@ -91,6 +94,42 @@ var TPT_MAP_VIEW = (function() {
     };
 
     init_click_n_plot = function() {
+        // Remove point when slide sheet is closed
+        $('.slide-sheet-content .close').on('click', function() {
+            TETHYS_MAP_VIEW.clearClickedPoint();
+        });
+
+        // Bind to map click event
+        TETHYS_MAP_VIEW.mapClicked(function(coordinate, event) {
+            let lon_lat = ol.proj.toLonLat(coordinate);
+            let lat = lon_lat[1];
+            let lon = lon_lat[0];
+            update_plot(lat, lon);
+            MAP_LAYOUT.show_plot();
+        });
+    };
+
+    fetch_time_series = async function(series, lat, lon) {
+        // Min temperature
+        let geometry = {
+            type: 'Point',
+            coordinates: [lon, lat]
+        };
+        let params = new URLSearchParams({
+            geometry: JSON.stringify(geometry),
+            end_time: m_valid_time_request_str,
+        });
+        let url = `${SERIES_ENDPOINTS[series]}?${params.toString()}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Token ${m_auth_token}`
+            },
+        });
+        return response.json();
+    };
+
+    reset_plot = function() {
         // Set the plot height based on the height of the slide sheet
         const pss_height = $('#plot-slide-sheet').height();
 
@@ -319,44 +358,62 @@ var TPT_MAP_VIEW = (function() {
                     'width': 1.5,
                 },
             },
+            // normal_temp
+            {
+                'x': [],
+                'y': [],
+                'legendgroup': 'temp',
+                'hovertemplate': "Normal Temp: %{y:.1f} \u00B0C",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 40,
+                'name': "Normal Temperature",
+                'type': 'scatter',
+                'line': {
+                    'color': '#000000',
+                    'width': 1,
+                },
+            },
+            // normal_cumm_prcp
+            {
+                'x': [],
+                'y': [],
+                'legendgroup': 'prcp',
+                'hovertemplate': "Normal Cum. Precip.: %{y:.1f} mm",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 80,
+                'name': "Normal Cumulative Precip.",
+                'type': 'scatter',
+                'yaxis': 'y2',
+                'line': {
+                    'color': '#01ff01',
+                    'dash': 'dot',
+                    'width': 1.5,
+                },
+            },
+            // normal_tot_prcp
+            {
+                'x': [],
+                'y': [],
+                'legendgroup': 'prcpbar',
+                'hovertemplate': "Normal Daily. Precip.: %{y:.1f} mm",
+                'hoverlabel': {
+                    'namelength': 0,
+                },
+                'legendrank': 55,
+                'name': 'Normal Daily Precip.',
+                'type': 'bar',
+                'yaxis': 'y2',
+                'marker': {
+                    'color': '#0c0cfc',
+                },
+            },
         ];
 
         MAP_LAYOUT.update_plot('', m_plot_data, m_plot_layout);
-
-        // Remove point when slide sheet is closed
-        $('.slide-sheet-content .close').on('click', function() {
-            TETHYS_MAP_VIEW.clearClickedPoint();
-        });
-
-        // Bind to map click event
-        TETHYS_MAP_VIEW.mapClicked(function(coordinate, event) {
-            let lon_lat = ol.proj.toLonLat(coordinate);
-            let lat = lon_lat[1];
-            let lon = lon_lat[0];
-            update_plot(lat, lon);
-            MAP_LAYOUT.show_plot();
-        });
-    };
-
-    fetch_time_series = async function(series, lat, lon) {
-        // Min temperature
-        let geometry = {
-            type: 'Point',
-            coordinates: [lon, lat]
-        };
-        let params = new URLSearchParams({
-            geometry: JSON.stringify(geometry),
-            end_time: m_valid_time_request_str,
-        });
-        let url = `${SERIES_ENDPOINTS[series]}?${params.toString()}`;
-        console.log(url);
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Token ${m_auth_token}`
-            },
-        });
-        return response.json();
     };
 
     update_lat_lon = function(lat, lon) {
@@ -379,6 +436,8 @@ var TPT_MAP_VIEW = (function() {
     };
 
     update_plot = function(lat, lon) {
+        reset_plot();
+
         // Update the latitude and longitude coordinates shown on the plot
         update_lat_lon(lat, lon);
 
@@ -422,6 +481,24 @@ var TPT_MAP_VIEW = (function() {
         });
         fetch_time_series('prj_cum_prcp', lat, lon).then((data) => {
             update_plot_series(6,  // prj_cum_prcp
+                data.time_series.datetime,
+                data.time_series.values,
+            );
+        });
+        fetch_time_series('normal_temp', lat, lon).then((data) => {
+            update_plot_series(7,  // normal_temp
+                data.time_series.datetime,
+                data.time_series.values,
+            );
+        });
+        fetch_time_series('normal_cumm_prcp', lat, lon).then((data) => {
+            update_plot_series(8,  // normal_cumm_prcp
+                data.time_series.datetime,
+                data.time_series.values,
+            );
+        });
+        fetch_time_series('normal_prcp', lat, lon).then((data) => {
+            update_plot_series(9,  // normal_prcp
                 data.time_series.datetime,
                 data.time_series.values,
             );
