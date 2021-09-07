@@ -5,11 +5,9 @@ import logging
 from django.http import JsonResponse
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.decorators import api_view, authentication_classes
-import pandas as pd
-import xarray as xr
 
 from tethysapp.temp_precip_trends.api_helpers import get_data, param_check, overlap_ts, jsonify, \
-    resample_to_weekly_sum
+    resample_to_weekly_sum, realign_normal_dataset
 from tethysapp.temp_precip_trends.app import TempPrecipTrendsApp as app
 
 log = logging.getLogger(f'tethys.{__name__}')
@@ -181,6 +179,8 @@ def get_projected_cumulative_precipitation(request):
         return JsonResponse(check_request)
 
 
+@api_view(['GET'])
+@authentication_classes((TokenAuthentication, SessionAuthentication,))
 def get_normal_data(request, variable):
     check_request = param_check(request)
 
@@ -190,11 +190,6 @@ def get_normal_data(request, variable):
             geometry = params['geometry']
             end_time = params.get('end_time')
             variable = variable.replace('-', '_')
-
-            # Compute times: series should start 9 months before given datetime
-            given_datetime = dt.datetime.strptime(end_time, '%Y%m%d')
-            begin_plot_time = given_datetime + relativedelta(months=-9)
-            begin_doy = int(begin_plot_time.strftime('%j'))
 
             # Get data at location
             catalog = app.get_spatial_dataset_service(app.SET_THREDDS_SDS_NAME, as_engine=True)
@@ -213,36 +208,9 @@ def get_normal_data(request, variable):
                 end_time='20001231',
                 return_json=False,
             )
-            da = ds[query_variable]
+            realigned_ds = realign_normal_dataset(query_variable, variable, ds, end_time)
 
-            # Move part of array before beg_doy to the end of the array
-            before_beg_doy = da.where(da.time.dt.dayofyear < begin_doy, drop=True)
-            after_beg_doy = da.where(da.time.dt.dayofyear >= begin_doy, drop=True)  # inclusive
-
-            # Concat parts into new array
-            recombined = xr.concat([after_beg_doy, before_beg_doy], 'obs')
-
-            # Build new timeseries dataset to return
-            plot_date_range = pd.date_range(
-                start=begin_plot_time,
-                end=begin_plot_time + relativedelta(months=12),
-                freq='D'
-            )
-
-            new_ds = xr.Dataset({
-                variable: xr.DataArray(
-                    data=recombined.data.copy(),
-                    dims=['time'],
-                    coords={'time': plot_date_range},
-                )
-            })
-
-            if 'cumm_prcp' in variable:
-                new_ds[variable] = new_ds[variable].cumsum(dim='time', skipna=True)
-            elif 'normal_prcp' in variable:
-                new_ds = resample_to_weekly_sum(variable, new_ds)
-
-            time_series = jsonify(new_ds, variable)
+            time_series = jsonify(realigned_ds, variable)
             return JsonResponse(time_series)
         except Exception:
             error_msg = 'Something went wrong while retrieving the normals data.'
