@@ -2,6 +2,8 @@
 
 A Tethys App that displays temperature and precipitation at a location anywhere in the world. This app is powered by the [ERA 5](https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5) dataset, which is produced by the [European Centre for Medium-Range Weather Forecasts (ECMWF)](https://www.ecmwf.int/).
 
+![image](https://user-images.githubusercontent.com/5123221/132414157-d80e5cd3-a358-4015-98dc-403288d72742.png)
+
 ## Tethys Platform
 
 This app uses a new feature of Tethys Platform that is still under development: MapViewLayout. This feature is only available on the [map_view_layout branch](https://github.com/tethysplatform/tethys/tree/map_view_layout) of Tethys Platform (there are no Conda packages available yet). To install this branch of Tethys Platform do the following:
