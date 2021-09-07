@@ -89,27 +89,28 @@ class APIHelpersTests(TestCase):
         self.assertTrue(np.array_equal(mock_time_series['cumsum_sum_tp_mm'].data, mock_cum_precip_data))
         self.assertEqual(expected_result, ret)
 
-    @mock.patch('tethysapp.temp_precip_trends.api_helpers.pd')
-    @mock.patch('tethysapp.temp_precip_trends.api_helpers.xr.Dataset', spec=xr.Dataset)
-    def test_jsonify(self, mock_xr, mock_pd):
-        mock_variable = 'test_variable'
-        mock_dates = mock.MagicMock(return_value=[1, 2])
-        mock_values = mock.MagicMock(return_value=[3, 4])
-
-        mock_xr.time = mock.PropertyMock()
-        mock_df = mock.MagicMock(spec=pd.DataFrame)
-        mock_pd.DataFrame.return_value = mock_df
-        mock_pd.DataFrame().index.strftime.return_value = mock.MagicMock(tolist=mock_dates)
-        mock_df.__getitem__.side_effect = {mock_variable: mock.MagicMock(to_list=mock_values)}.__getitem__
-
+    def test_jsonify(self):
+        variable = 'foo'
+        data = np.array([28.0532, 19.1715,  5.1637])
+        times = pd.date_range('2021-09-07', periods=3, freq='D')
+        ds = xr.Dataset(
+            data_vars={
+                variable: xr.DataArray(
+                    data=data,
+                    coords={'time': times},
+                    dims=['time'],
+                )
+            }
+        )
         expected_result = {
             'time_series': {
-                'variable': mock_variable,
-                'datetime': mock_dates(),
-                'values': mock_values()
+                'variable': variable,
+                'datetime': ['2021-09-07T00:00:00Z', '2021-09-08T00:00:00Z', '2021-09-09T00:00:00Z'],
+                'values': [28.0532, 19.1715,  5.1637],
             }
         }
-        ret = jsonify(mock_xr, mock_variable)
+
+        ret = jsonify(ds, variable)
 
         self.assertEqual(ret, expected_result)
 

@@ -2,7 +2,6 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta
 import json
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
