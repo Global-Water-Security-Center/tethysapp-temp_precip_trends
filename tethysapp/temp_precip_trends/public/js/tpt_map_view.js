@@ -43,8 +43,8 @@ var TPT_MAP_VIEW = (function() {
  	*************************************************************************/
  	var init_members;
  	var init_valid_time;
- 	var init_click_n_plot, update_lat_lon, update_plot, update_plot_series,
- 	    update_plot_title, reset_plot, fetch_time_series;
+ 	var init_click_n_plot, update_lat_lon, update_depart_norms, update_plot,
+ 	    update_plot_series, update_plot_title, reset_plot, fetch_time_series;
 
  	/************************************************************************
  	*                    PRIVATE FUNCTION IMPLEMENTATIONS
@@ -230,6 +230,23 @@ var TPT_MAP_VIEW = (function() {
                         'color': '#888888',
                     },
                 },
+                // 9-Month Departures from Normal
+                {
+                    'align': 'left',
+                    'xref': 'paper',
+                    'yref': 'paper',
+                    'xanchor': 'right',
+                    'yanchor': 'bottom',
+                    'x': 0.98,
+                    'y': 0.1,
+                    'text': '9-Month Depatures from Normal:<br>Cum. Precip.: -<br>Mean Temp.: -',
+                    'showarrow': false,
+                    'bgcolor': "rgba(255, 255, 255, 0.75)",
+                    'font': {
+                        'size': 15,
+                        'color': '#888888',
+                    },
+                },
             ]
         };
 
@@ -292,12 +309,12 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcpbar',
-                'hovertemplate': "Daily. Precip.: %{y:.1f} mm",
+                'hovertemplate': "Weekly. Precip.: %{y:.1f} mm",
                 'hoverlabel': {
                     'namelength': 0,
                 },
                 'legendrank': 50,
-                'name': 'Daily Precip.',
+                'name': 'Weekly Precip.',
                 'type': 'bar',
                 'yaxis': 'y2',
                 'marker': {
@@ -399,12 +416,12 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcpbar',
-                'hovertemplate': "Normal Daily. Precip.: %{y:.1f} mm",
+                'hovertemplate': "Normal Weekly. Precip.: %{y:.1f} mm",
                 'hoverlabel': {
                     'namelength': 0,
                 },
                 'legendrank': 55,
-                'name': 'Normal Daily Precip.',
+                'name': 'Normal Weekly Precip.',
                 'type': 'bar',
                 'yaxis': 'y2',
                 'marker': {
@@ -419,6 +436,27 @@ var TPT_MAP_VIEW = (function() {
     update_lat_lon = function(lat, lon) {
         // Lat/lon is the 3rd annotation
         m_plot_layout.annotations[2].text = `Lat: ${lat.toFixed(2)} Lon: ${lon.toFixed(2)}`;
+    };
+
+    update_depart_norms = function(temp_series, prcp_series, normal_temp_series, normal_prcp_series) {
+        // Compute the departures from normal for temperature
+        let temp_loc = temp_series.time_series.values.length - 1;
+        let curr_temp = temp_series.time_series.values[temp_loc];
+        let normal_temp = normal_temp_series.time_series.values[temp_loc];
+        let temp_diff = curr_temp - normal_temp;
+        let temp_percent = (temp_diff / normal_temp) * 100;
+
+        // Compute the departures from normal for precipitation
+        let prcp_loc = prcp_series.time_series.values.length - 1;
+        let curr_prcp = prcp_series.time_series.values[prcp_loc];
+        let normal_prcp = normal_prcp_series.time_series.values[prcp_loc];
+        let prcp_diff = curr_prcp - normal_prcp;
+        let prcp_percent = (prcp_diff / normal_prcp) * 100;
+
+        // Departures from normal is the 4th annotation
+        m_plot_layout.annotations[3].text = `9-Month Depatures from Normal:<br>` +
+            `Cum. Precip.: ${prcp_diff.toFixed(1)} mm / ${prcp_percent.toFixed(1)}%<br>` +
+            `Mean Temp.: ${temp_diff.toFixed(1)} \u00B0C / ${temp_percent.toFixed(1)}%`;
     };
 
     update_plot_series = function(series_index, x, y) {
@@ -455,7 +493,8 @@ var TPT_MAP_VIEW = (function() {
                 data.time_series.values,
             );
         });
-        fetch_time_series('mean_temp', lat, lon).then((data) => {
+        let mt_promise = fetch_time_series('mean_temp', lat, lon);
+        mt_promise.then((data) => {
             update_plot_series(2,  // mean_temp
                 data.time_series.datetime,
                 data.time_series.values,
@@ -467,7 +506,8 @@ var TPT_MAP_VIEW = (function() {
                 data.time_series.values,
             );
         });
-        fetch_time_series('cum_prcp', lat, lon).then((data) => {
+        let cp_promise = fetch_time_series('cum_prcp', lat, lon)
+        cp_promise.then((data) => {
             update_plot_series(4,  // cum_prcp
                 data.time_series.datetime,
                 data.time_series.values,
@@ -485,13 +525,15 @@ var TPT_MAP_VIEW = (function() {
                 data.time_series.values,
             );
         });
-        fetch_time_series('normal_temp', lat, lon).then((data) => {
+        let nt_promise = fetch_time_series('normal_temp', lat, lon);
+        nt_promise.then((data) => {
             update_plot_series(7,  // normal_temp
                 data.time_series.datetime,
                 data.time_series.values,
             );
         });
-        fetch_time_series('normal_cumm_prcp', lat, lon).then((data) => {
+        let ncp_promise = fetch_time_series('normal_cumm_prcp', lat, lon);
+        ncp_promise.then((data) => {
             update_plot_series(8,  // normal_cumm_prcp
                 data.time_series.datetime,
                 data.time_series.values,
@@ -505,6 +547,11 @@ var TPT_MAP_VIEW = (function() {
         });
 
         update_plot_title(m_plot_title, m_plot_subtitle);
+
+        // Update the departure from normal stats when the four series needed have been retrieved
+        Promise.all([mt_promise, cp_promise, nt_promise, ncp_promise]).then((values) =>{
+            update_depart_norms(values[0], values[1], values[2], values[3]);
+        });
     };
 
 	/************************************************************************

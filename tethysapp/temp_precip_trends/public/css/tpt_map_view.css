@@ -9,6 +9,10 @@
   height: 90vh;
 }
 
+#plot-slide-sheet .slide-sheet-body {
+  padding: 0;
+}
+
 #plot-slide-sheet .slide-sheet-subtitle {
   margin-left: 25px;
   color: #888;

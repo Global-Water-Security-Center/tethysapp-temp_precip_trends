@@ -1,8 +1,7 @@
-from datetime import datetime
+import datetime as dt
 from dateutil.relativedelta import relativedelta
 import json
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -15,7 +14,7 @@ def get_data(variable, dataset, geometry, start_time=None, end_time=None, cum_su
 
     Args:
         variable (str): Name of the variable to query.
-        dataset (siphon.catalog.Dataset): A THREDDS dataset from a catalog.
+        dataset (xarray.Dataset): A dataset from a THREDDS catalog.
         geometry (str): GeoJSON string of a Point location at which to retrieve the data.
         start_time (str): Start time of the date range of data to retrieve (e.g.: 'YYYYMMDD').
         end_time (str): End time of the date range of data to retrieve (e.g.: 'YYYYMMDD').
@@ -61,15 +60,12 @@ def jsonify(dataset, variable):
     Returns:
         dict: JSON-compatible Python Dict.
     """
-    df = pd.DataFrame(data={variable: np.transpose(dataset[variable].data)}, index=dataset.time.data)
-    df.index = df.index.strftime('%Y-%m-%dT%H:%M:%SZ')
-    df.index.name = 'datetime'
-
+    str_time_da = dataset.time.dt.strftime('%Y-%m-%dT%H:%M:%SZ')
     json_dict = {
         'time_series': {
             'variable': variable,
-            'datetime': df.index.tolist(),
-            'values': df[variable].to_list(),
+            'datetime': str_time_da.data.tolist(),
+            'values': dataset[variable].data.tolist(),
         }
     }
 
@@ -116,7 +112,7 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
     Extract a time series from a THREDDS dataset at the given location.
 
     Args:
-        dataset(siphon.catalog.Dataset): a THREDDS dataset from a catalog.
+        dataset(xarray.Dataset): A dataset from a THREDDS catalog.
         geometry(geojson): A geojson object representing the location.
         variable(str): Name of the variable to query.
         start_time(str): Start of time range to query. Defaults to 9 months before end_time.
@@ -137,12 +133,12 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
 
         # Filter by time
         if isinstance(end_time, str):
-            end_time = datetime.strptime(end_time, '%Y%m%d')
+            end_time = dt.datetime.strptime(end_time, '%Y%m%d')
 
-        if start_time is None and isinstance(end_time, datetime):
+        if start_time is None and isinstance(end_time, dt.datetime):
             start_time = end_time + relativedelta(months=-9)
         elif isinstance(start_time, str):
-            start_time = datetime.strptime(start_time, '%Y%m%d')
+            start_time = dt.datetime.strptime(start_time, '%Y%m%d')
 
         if start_time or end_time:
             query.time_range(start_time, end_time)
@@ -163,3 +159,83 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
                              "Please try another dataset.")
         else:
             raise e
+
+
+def resample_to_weekly_sum(variable, dataset):
+    """
+    Resample the variable on the given dataset to a weekly sum of values. Returns a new dataset
+        with only the reduced variable.
+
+    Args:
+        variable (str): Name of the variable to query.
+        dataset (xarray.Dataset): A dataset from a THREDDS catalog.
+
+    Returns:
+        xarray.Dataset: New dataset with resampled and reduced variable.
+    """
+    # Create new dataset with simplified structure that resample can operate on
+    simplified_ds = xr.Dataset({
+        variable: xr.DataArray(
+            data=dataset[variable].data.copy(),
+            coords={'time': dataset.time.data.copy()},
+        )
+    })
+    # Resample
+    weekly_da = simplified_ds[variable] \
+        .resample(time='7D', skipna=True) \
+        .sum('time')
+    # Wrap resampled DataArray in dataset for jsonify to work
+    weekly_ds = xr.Dataset({variable: weekly_da})
+    return weekly_ds
+
+
+def realign_normal_dataset(in_variable, out_variable, dataset, curr_datetime):
+    """
+    Cut given dataset 9-months before the current day-of-year and move first part to end to align
+        it with the time window of the other data series.
+
+    Args:
+        in_variable (str): Name of variable in the given Dataset.
+        out_variable (str): Name to give the variable in returned Dataset.
+        dataset (xarray.Dataset): The ERA5 normal dataset from a THREDDS catalog.
+        curr_datetime (datetime.datetime): Current date and time.
+
+    Returns:
+        xarray.Dataset: New dataset, realigned to match other data series.
+    """
+    # Compute times: series should start 9 months before given datetime
+    given_datetime = dt.datetime.strptime(curr_datetime, '%Y%m%d')
+    begin_plot_time = given_datetime + relativedelta(months=-9)
+    begin_doy = int(begin_plot_time.strftime('%j'))
+
+    # Move part of array before begin_doy to the end of the array
+    da = dataset[in_variable]
+    before_beg_doy = da.where(da.time.dt.dayofyear < begin_doy, drop=True)
+    after_beg_doy = da.where(da.time.dt.dayofyear >= begin_doy, drop=True)  # inclusive
+
+    # Concat parts into new array
+    recombined = xr.concat([after_beg_doy, before_beg_doy], 'obs')
+
+    # Build new time series dataset to return
+    realigned_ds = xr.Dataset({
+        out_variable: xr.DataArray(
+            data=recombined.data.copy(),
+            dims=['time'],
+            coords={
+                'time': pd.date_range(
+                    start=begin_plot_time,
+                    end=begin_plot_time + relativedelta(months=12),
+                    freq='D'
+                )
+            },
+        )
+    })
+
+    # Handle precipitation cases
+    if 'cumm_prcp' in out_variable:
+        realigned_ds[out_variable] = realigned_ds[out_variable]\
+            .cumsum(dim='time', skipna=True)
+    elif 'normal_prcp' in out_variable:
+        realigned_ds = resample_to_weekly_sum(out_variable, realigned_ds)
+
+    return realigned_ds

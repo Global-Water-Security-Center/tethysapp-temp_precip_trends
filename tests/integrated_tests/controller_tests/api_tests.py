@@ -24,11 +24,12 @@ class ApiTests(TestCase):
         mock_app.get_spatial_dataset_service.return_value = mock_catalog
         mock_app.get_custom_setting.return_value = 'Dataset Name'
 
+    @mock.patch('tethysapp.temp_precip_trends.controllers.api.resample_to_weekly_sum')
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.jsonify')
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.app')
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.param_check')
     @mock.patch('tethysapp.temp_precip_trends.controllers.api.get_data')
-    def test_get_temps_and_precip(self, mock_get_data, mock_param_check, mock_app, mock_jsonify):
+    def test_get_temps_and_precip(self, mock_get_data, mock_param_check, mock_app, mock_jsonify, _):
         self.configure_mock_app(mock_app)
         mock_data = {'geometry': 'foo', 'start_time': 'bar', 'end_time': 'baz'}
         mock_request_min = self.factory.get('/get-min-temp/', data=mock_data)
