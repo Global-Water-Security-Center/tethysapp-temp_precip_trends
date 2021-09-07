@@ -8,7 +8,8 @@ from rest_framework.decorators import api_view, authentication_classes
 import pandas as pd
 import xarray as xr
 
-from tethysapp.temp_precip_trends.api_helpers import get_data, param_check, overlap_ts, jsonify
+from tethysapp.temp_precip_trends.api_helpers import get_data, param_check, overlap_ts, jsonify, \
+    resample_to_weekly_sum
 from tethysapp.temp_precip_trends.app import TempPrecipTrendsApp as app
 
 log = logging.getLogger(f'tethys.{__name__}')
@@ -27,7 +28,6 @@ def get_min_temperature(request):
             start_time = params.get('start_time', None)
             end_time = params.get('end_time', None)
             time_series = get_data('min_t2m_c', dataset, geometry, start_time, end_time)
-
             return JsonResponse(time_series)
 
         except Exception:
@@ -51,7 +51,6 @@ def get_max_temperature(request):
             start_time = params.get('start_time', None)
             end_time = params.get('end_time', None)
             time_series = get_data('max_t2m_c', dataset, geometry, start_time, end_time)
-
             return JsonResponse(time_series)
 
         except Exception:
@@ -75,7 +74,6 @@ def get_mean_temperature(request):
             start_time = params.get('start_time', None)
             end_time = params.get('end_time', None)
             time_series = get_data('mean_t2m_c', dataset, geometry, start_time, end_time)
-
             return JsonResponse(time_series)
 
         except Exception:
@@ -100,11 +98,8 @@ def get_total_precipitation(request):
             start_time = params.get('start_time', None)
             end_time = params.get('end_time', None)
             ds = get_data(variable, dataset, geometry, start_time, end_time, return_json=False)
-
-            # TODO: Weekly total precipitation
-            # ds = ds.resample(datetime='7D').sum()
-            time_series = jsonify(ds, variable)
-
+            resampled_ds = resample_to_weekly_sum(variable, ds)
+            time_series = jsonify(resampled_ds, variable)
             return JsonResponse(time_series)
 
         except Exception:
@@ -128,7 +123,6 @@ def get_cumulative_precipitation(request):
             start_time = params.get('start_time', None)
             end_time = params.get('end_time', None)
             time_series = get_data('sum_tp_mm', dataset, geometry, start_time, end_time, cum_sum=True)
-
             return JsonResponse(time_series)
 
         except Exception:
@@ -152,9 +146,7 @@ def get_projected_mean_temperature(request):
             start_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
             end_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-9)
             time_series = get_data('mean_t2m_c', dataset, geometry, start_time, end_time)
-
             overlap_ts(time_series)  # add one year to time-series dates for projected data overlap
-
             return JsonResponse(time_series)
 
         except Exception:
@@ -178,9 +170,7 @@ def get_projected_cumulative_precipitation(request):
             start_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-21)
             end_time = dt.datetime.strptime(params['end_time'], '%Y%m%d') + relativedelta(months=-9)
             time_series = get_data('sum_tp_mm', dataset, geometry, start_time, end_time, cum_sum=True)
-
             overlap_ts(time_series)  # add one year to time-series dates for projected data overlap
-
             return JsonResponse(time_series)
 
         except Exception:
@@ -249,6 +239,8 @@ def get_normal_data(request, variable):
 
             if 'cumm_prcp' in variable:
                 new_ds[variable] = new_ds[variable].cumsum(dim='time', skipna=True)
+            elif 'normal_prcp' in variable:
+                new_ds = resample_to_weekly_sum(variable, new_ds)
 
             time_series = jsonify(new_ds, variable)
             return JsonResponse(time_series)

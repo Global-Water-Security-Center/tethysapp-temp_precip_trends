@@ -15,7 +15,7 @@ def get_data(variable, dataset, geometry, start_time=None, end_time=None, cum_su
 
     Args:
         variable (str): Name of the variable to query.
-        dataset (siphon.catalog.Dataset): A THREDDS dataset from a catalog.
+        dataset (xarray.Dataset): A dataset from a THREDDS catalog.
         geometry (str): GeoJSON string of a Point location at which to retrieve the data.
         start_time (str): Start time of the date range of data to retrieve (e.g.: 'YYYYMMDD').
         end_time (str): End time of the date range of data to retrieve (e.g.: 'YYYYMMDD').
@@ -61,15 +61,12 @@ def jsonify(dataset, variable):
     Returns:
         dict: JSON-compatible Python Dict.
     """
-    df = pd.DataFrame(data={variable: np.transpose(dataset[variable].data)}, index=dataset.time.data)
-    df.index = df.index.strftime('%Y-%m-%dT%H:%M:%SZ')
-    df.index.name = 'datetime'
-
+    str_time_da = dataset.time.dt.strftime('%Y-%m-%dT%H:%M:%SZ')
     json_dict = {
         'time_series': {
             'variable': variable,
-            'datetime': df.index.tolist(),
-            'values': df[variable].to_list(),
+            'datetime': str_time_da.data.tolist(),
+            'values': dataset[variable].data.tolist(),
         }
     }
 
@@ -116,7 +113,7 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
     Extract a time series from a THREDDS dataset at the given location.
 
     Args:
-        dataset(siphon.catalog.Dataset): a THREDDS dataset from a catalog.
+        dataset(xarray.Dataset): A dataset from a THREDDS catalog.
         geometry(geojson): A geojson object representing the location.
         variable(str): Name of the variable to query.
         start_time(str): Start of time range to query. Defaults to 9 months before end_time.
@@ -163,3 +160,28 @@ def extract_time_series_at_location(dataset, geometry, variable, start_time=None
                              "Please try another dataset.")
         else:
             raise e
+
+
+def resample_to_weekly_sum(variable, dataset):
+    """
+    Resample the variable on the given dataset to a weekly sum of values. Returns a new dataset
+        with only the reduced variable.
+
+    Args:
+        variable (str): Name of the variable to query.
+        dataset (xarray.Dataset): A dataset from a THREDDS catalog.
+    """
+    # Create new dataset with simplified structure that resample can operate on
+    simplified_ds = xr.Dataset({
+        variable: xr.DataArray(
+            data=dataset[variable].data.copy(),
+            coords={'time': dataset.time.data.copy()},
+        )
+    })
+    # Resample
+    weekly_da = simplified_ds[variable] \
+        .resample(time='7D', skipna=True) \
+        .sum('time')
+    # Wrap resampled DataArray in dataset for jsonify to work
+    weekly_ds = xr.Dataset({variable: weekly_da})
+    return weekly_ds

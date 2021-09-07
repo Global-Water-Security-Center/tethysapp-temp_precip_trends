@@ -309,12 +309,12 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcpbar',
-                'hovertemplate': "Daily. Precip.: %{y:.1f} mm",
+                'hovertemplate': "Weekly. Precip.: %{y:.1f} mm",
                 'hoverlabel': {
                     'namelength': 0,
                 },
                 'legendrank': 50,
-                'name': 'Daily Precip.',
+                'name': 'Weekly Precip.',
                 'type': 'bar',
                 'yaxis': 'y2',
                 'marker': {
@@ -416,12 +416,12 @@ var TPT_MAP_VIEW = (function() {
                 'x': [],
                 'y': [],
                 'legendgroup': 'prcpbar',
-                'hovertemplate': "Normal Daily. Precip.: %{y:.1f} mm",
+                'hovertemplate': "Normal Weekly. Precip.: %{y:.1f} mm",
                 'hoverlabel': {
                     'namelength': 0,
                 },
                 'legendrank': 55,
-                'name': 'Normal Daily Precip.',
+                'name': 'Normal Weekly Precip.',
                 'type': 'bar',
                 'yaxis': 'y2',
                 'marker': {
