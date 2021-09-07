@@ -40,8 +40,8 @@ This app uses a new feature of Tethys Platform that is still under development: 
 
    * Name: <some_meaningful_name>
    * Engine: THREDDS
-   * Endpoint: <protocol>://<host>:<ip>/thredds/era5Catalog.xml
-   * Public Endpoint: <protocol>://<host>:<ip>/thredds/era5Catalog.xml
+   * Endpoint: \<protocol>://\<host>:\<port>/thredds/era5Catalog.xml
+   * Public Endpoint: \<protocol>://\<host>:\<port>/thredds/era5Catalog.xml
    * Apikey: <leave_blank>
    * Username: <leave_blank>
    * Password: <leave_blank>
